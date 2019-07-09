@@ -1,5 +1,13 @@
 /**
- * @brief
+ * @brief Triangle counting test program
+ * Based on triangle counting algorithm designed in:
+ * J. Fox, O. Green, K. Gabert, X. An, D. Bader, “Fast and Adaptive List Intersections on the GPU”, 
+ * IEEE High Performance Extreme Computing Conference (HPEC), 
+ * Waltham, Massachusetts, 2018
+ * O. Green, J. Fox, A. Tripathy, A. Watkins, K. Gabert, E. Kim, X. An, K. Aatish, D. Bader, 
+ * “Logarithmic Radix Binning and Vectorized Triangle Counting”, 
+ * IEEE High Performance Extreme Computing Conference (HPEC), 
+ * Waltham, Massachusetts, 2018
  * @file
  */
 
