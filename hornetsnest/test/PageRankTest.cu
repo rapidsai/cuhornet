@@ -1,5 +1,5 @@
 /**
- * @brief Breadth-first Search Top-Down test program
+ * @brief PageRank test program
  * @file
  */
 #include "Static/PageRank/PageRank.cuh"
