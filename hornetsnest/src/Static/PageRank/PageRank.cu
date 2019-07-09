@@ -104,10 +104,10 @@ void StaticPageRank::run() {
 
 	pr_t h_out = hd_prdata().threshold + 1;
 
-	if(this->isUndirected==true)
-		printf("Run is true\n");
-	else
-		printf("Run is false\n");
+	// if(this->isUndirected==true)
+	// 	printf("Run is true\n");
+	// else
+	// 	printf("Run is false\n");
 
 
 	while(hd_prdata().iteration < hd_prdata().iteration_max &&
@@ -116,10 +116,10 @@ void StaticPageRank::run() {
 		forAllnumV(hornet, ResetCurr { hd_prdata });
 		forAllVertices(hornet, ComputeContribuitionPerVertex { hd_prdata });
 		if (isUndirected == true){
-			printf("***");
+			// printf("***");
 			forAllEdges(hornet, AddContribuitionsPush { hd_prdata }, load_balancing);
 		}else{
-			printf("###");
+			// printf("###");
 			forAllEdges(hornet, AddContribuitionsPull { hd_prdata },load_balancing);
 		}
 		forAllnumV(hornet, DampAndDiffAndCopy { hd_prdata });
