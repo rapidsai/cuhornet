@@ -140,8 +140,6 @@ void binarySearchLB2(const int* __restrict__ d_partitions,
                      void*      __restrict__ smem,
                      const Lambda&           lambda) {
 
-    static_assert(xlib::get_arity<Lambda>() == 2, "binarySearchLB2 must have "
-                  "lambda expression with two arguments");
     const unsigned ITEMS_PER_WARP  = xlib::WARP_SIZE * ITEMS_PER_THREAD;
     const unsigned ITEMS_PER_BLOCK = BLOCK_SIZE * ITEMS_PER_THREAD;
 
@@ -187,8 +185,6 @@ void binarySearchLB3(const int* __restrict__ d_partitions,
                      int                     prefixsum_size,
                      void*      __restrict__ smem,
                      const Lambda&           lambda) {
-    static_assert(xlib::get_arity<Lambda>() == 3, "binarySearchLB3 must have "
-                  "lambda expression with three arguments");
     const unsigned ITEMS_PER_WARP  = xlib::WARP_SIZE * ITEMS_PER_THREAD;
     const unsigned ITEMS_PER_BLOCK = BLOCK_SIZE * ITEMS_PER_THREAD;
 
