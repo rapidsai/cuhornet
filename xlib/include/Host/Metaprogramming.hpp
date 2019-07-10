@@ -151,19 +151,6 @@ template<typename T>
 HOST_DEVICE
 constexpr unsigned get_arity();
 
-//==============================================================================
-//https://stackoverflow.com/a/12982320/6585879
-
-template<typename T>
-using EnableP = decltype( std::declval<std::ostream&>() << std::declval<T>() );
-
-template<typename T, typename = void>
-struct is_stream_insertable : std::false_type {};
-
-template<typename T>
-struct is_stream_insertable<T, EnableP<T>> : std::true_type {};
-
-
 template<int, typename>
 struct get_type;
 

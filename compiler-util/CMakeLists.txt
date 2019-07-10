@@ -73,7 +73,6 @@ endif()
 
 include_directories("${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}")
 include_directories(../primitives)
-include_directories(../externals/cpp-btree-master)
 include_directories(../xlib/include)
 
 if(CUB_LIBRARY)
