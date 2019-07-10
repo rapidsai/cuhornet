@@ -68,8 +68,8 @@ void ExactBC::release(){
 void ExactBC::run() {
 
     for(vid_t r=start_v; r<stop_v; r++){
-        if((r%200)==0)
-            cout << r << ", " << flush;
+        // if((r%200)==0)
+        //     cout << r << ", " << flush;
         BCCentrality::setRoot(r);
         BCCentrality::run();
     }
