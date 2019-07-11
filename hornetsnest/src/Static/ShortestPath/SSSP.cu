@@ -105,15 +105,6 @@ void SSSP::release() {
 
 bool SSSP::validate() {
     return true;
-    //using namespace graph;
-    //GraphWeight<vid_t, eoff_t, weight_t>
-    //graph(hornet.csr_offsets(), hornet.nV(),
-    //      hornet.csr_edges(), hornet.nE(), hornet.edge_field<1>());
-    //BellmanFord<vid_t, eoff_t, weight_t> sssp(graph);
-    //sssp.run(sssp_source);
-
-    //auto h_distances = sssp.result();
-    //return gpu::equal(h_distances, h_distances + graph.nV(), d_distances);
 }
 
 } // namespace hornets_nest

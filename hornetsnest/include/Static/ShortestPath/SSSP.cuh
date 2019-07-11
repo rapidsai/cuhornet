@@ -1,5 +1,5 @@
 /**
- * @brief Singel Source Shortest Path Header
+ * @brief Single Source Shortest Path Header
  * @author Federico Busato                                                  <br>
  *         Univerity of Verona, Dept. of Computer Science                   <br>
  *         federico.busato@univr.it
