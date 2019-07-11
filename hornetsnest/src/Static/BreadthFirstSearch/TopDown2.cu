@@ -34,7 +34,6 @@
  * </blockquote>}
  */
 #include "Static/BreadthFirstSearch/TopDown2.cuh"
-#include "Auxilary/DuplicateRemoving.cuh"
 #include <Graph/GraphStd.hpp>
 #include <Graph/BFS.hpp>
 
@@ -47,25 +46,6 @@ const dist_t INF = std::numeric_limits<dist_t>::max();
 // OPERATORS //
 ///////////////
 
-struct BFSOperator1 {
-    dist_t*              d_distances;
-    TwoLevelQueue<vid_t> queue;
-
-    OPERATOR(Vertex& vertex, Edge& edge) {
-        auto dst = edge.dst_id();
-        if (!is_duplicate<2>(dst) && d_distances[dst] == INF)
-            queue.insert(dst);
-    }
-};
-
-struct BFSOperator2 {
-    dist_t* d_distances;
-    dist_t  current_level;
-
-    OPERATOR(vid_t& vertex_id) {
-        d_distances[vertex_id] = current_level;
-    }
-};
 
 struct BFSOperatorAtomic {                  //deterministic
     dist_t               current_level;

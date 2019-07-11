@@ -32,7 +32,6 @@
  * </blockquote>}
  */
 #include "Static/BUBreadthFirstSearch/BottomUpBFS.cuh"
-#include "Auxilary/DuplicateRemoving.cuh"
 #include <Graph/GraphStd.hpp>
 #include <Graph/BFS.hpp>
 
