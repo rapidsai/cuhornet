@@ -184,6 +184,6 @@ private:
     work_evaluate(const custinger::eoff_t* csr_offsets) noexcept;
 };
 
-} // namespace custinger_alg
+}  // namespace hornets_nest
 
 #include "MultiLevelQueue.i.cuh"
