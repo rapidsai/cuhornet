@@ -111,6 +111,7 @@ initialize(HornetInit<
     const auto * offsets = h_init.csr_offsets();
     for (int i = 0; i < h_init.nV(); ++i) {
         auto degree = offsets[i + 1] - offsets[i];
+        if (degree == 0) { continue; }
         auto device_ad = _ba_manager.insert(degree);
         auto e_ref = e_d[i];
         e_ref.template get<0>() = degree;
