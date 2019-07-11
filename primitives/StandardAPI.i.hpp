@@ -279,49 +279,6 @@ void generate_randoms(T* pointer, size_t num_items, T min, T max, S seed) {
                   [&](){ return distrib(engine); } );
 }
 
-#if 0//not used, the implementation has bugs (e.g. 1) MAX_THREADS is set to the number of HW threads in the machine this code is originally compiled, if the binary is executed in another machine with more HW threads, this code will break, 2) T result is used before initialized, 3) std::accumulate should take th_result as an input argument, not input.
-template<typename T>
-T reduce(const T* input, size_t num_items) {
-    T th_result[MAX_THREADS];
-    #pragma omp parallel firstprivate(input, num_items)
-    {
-        T result;
-        #pragma omp for schedule(static) nowait
-        for (int i = 0; i < num_items; i++)
-            result += input[i];
-        th_result[omp_get_thread_num()] = result;
-    }
-    return std::accumulate(input, input + omp_get_num_threads(), T(0));
-}
-
-template<typename T>
-void excl_prefixsum(const T* input, size_t num_items, T* output) {
-    T th_result[MAX_THREADS];
-    #pragma omp parallel firstprivate(input, num_items, th_result)
-    {
-        T result;
-        #pragma omp for schedule(static) nowait
-        for (int i = 0; i < num_items; i++)
-            result += input[i];
-        th_result[omp_get_thread_num() + 1] = result;
-    }
-    th_result[omp_get_thread_num()] = 0;
-    std::partial_sum(input, input + omp_get_num_threads() + 1);
-    output[0] = 0;
-
-    #pragma omp parallel firstprivate(input, num_items, th_result)
-    {
-        T partial = th_result[omp_get_thread_num()];
-        bool flag = true;
-        #pragma omp for schedule(static) nowait
-        for (int i = 0; i < num_items; i++) {
-            output[i] = flag ? partial : input[i - 1] + output[i - 1] + partial;
-            flag = false;
-        }
-    }
-}
-#endif
-
 template<typename T>
 void printArray(const T* host_input, size_t num_items) {
     xlib::printArray(host_input, num_items);
