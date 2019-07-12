@@ -41,6 +41,7 @@
 #include "Queue/TwoLevelQueue.cuh"
 #include "HostDeviceVar.cuh"
 #include "LoadBalancing/VertexBased.cuh"
+#include "LoadBalancing/BinarySearch.cuh"
 #include <BasicTypes.hpp>
 //#include <Core/BatchUpdate/BatchUpdate.cuh>
 

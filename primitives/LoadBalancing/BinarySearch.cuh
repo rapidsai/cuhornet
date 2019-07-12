@@ -37,7 +37,8 @@
  * @file
  */
 #pragma once
-
+ 
+#include "BasicTypes.hpp"
 #include "Queue/TwoLevelQueue.cuh"
 
 namespace hornets_nest {
