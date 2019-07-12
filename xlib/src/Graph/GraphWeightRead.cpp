@@ -139,15 +139,6 @@ void GraphWeight<vid_t, eoff_t, weight_t>
     xlib::MemoryMapped memory_mapped(filename, file_size,
                                      xlib::MemoryMapped::READ, print);
 
-    std::string class_id = xlib::type_name<vid_t>() + xlib::type_name<eoff_t>() +
-                           xlib::type_name<weight_t>();
-    auto tmp = new char[class_id.size()];
-    memory_mapped.read(tmp, class_id.size());
-
-    if (!std::equal(tmp, tmp + class_id.size(), class_id.begin()))
-        ERROR("Different class identifier")
-    delete[] tmp;
-
     memory_mapped.read(&_nV, 1, &_nE, 1, &_structure, 1);
     auto direction = _structure.is_directed() ? structure_prop::DIRECTED
                                               : structure_prop::UNDIRECTED;

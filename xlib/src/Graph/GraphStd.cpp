@@ -400,21 +400,19 @@ void GraphStd<vid_t, eoff_t>
                 << " (" << (file_size >> 20) << ") MB" << std::endl;
     }
 
-    std::string class_id = xlib::type_name<vid_t>() + xlib::type_name<eoff_t>();
-    file_size           += class_id.size();
     xlib::MemoryMapped memory_mapped(filename.c_str(), file_size,
                                      xlib::MemoryMapped::WRITE, print);
 
     if (_structure.is_directed() && _structure.is_reverse()) {
         auto struct_tmp = DIRECTED | ENABLE_INGOING;
-        memory_mapped.write(class_id.c_str(), class_id.size(),          //NOLINT
+        memory_mapped.write(
                             &_nV, 1, &_nE, 1, &struct_tmp, 1,           //NOLINT
                             _out_offsets, _nV + 1, _in_offsets, _nV + 1,//NOLINT
                             _out_edges, _nE, _in_edges, _nE);           //NOLINT
     }
     else {
         auto struct_tmp = DIRECTED;
-        memory_mapped.write(class_id.c_str(), class_id.size(),          //NOLINT
+        memory_mapped.write(
                             &_nV, 1, &_nE, 1, &struct_tmp, 1,           //NOLINT
                             _out_offsets, _nV + 1, _out_edges, _nE);    //NOLINT
     }

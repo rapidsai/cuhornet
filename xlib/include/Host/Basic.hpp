@@ -133,13 +133,6 @@ const size_t MB = 1024llu * 1024llu;
 const size_t GB = 1024llu * 1024llu * 1024llu;
 const size_t TB = 1024llu * 1024llu * 1024llu * 1024llu;
 
-template <class T>
-std::string type_name(T Obj);
-
-//@see http://stackoverflow.com/posts/20170989/revisions
-template <class T>
-std::string type_name();
-
 bool is_integer(const std::string& str) noexcept;
 
 template<unsigned BYTE_SIZE>
