@@ -18,7 +18,6 @@ The document is organized as follows:
 
 ### Requirements ###
 
-* [Nvidia Modern GPU](https://developer.nvidia.com/cuda-gpus) (compute capability &ge; 6.0): Pascal and Volta architectures.
 * [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) 9 or greater.
 * GCC or [Clang](https://clang.llvm.org) host compiler with support for C++14.
   Note, the compiler must be compatible with the related CUDA toolkit version.
