@@ -1,5 +1,5 @@
 /**
- * @brief Breadth-first Search Top-Down test program
+ * @brief Betweenness Centrality test program
  * @file
  */
 #include "Static/BetweennessCentrality/bc.cuh"

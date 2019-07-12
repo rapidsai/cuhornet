@@ -49,10 +49,12 @@ StaticPageRank::StaticPageRank(HornetGraph& hornet,
 		        	bool isUndirected):
                                     StaticAlgorithm(hornet),
                                     load_balancing(hornet) {
+#ifdef DEBUG
 	if(isUndirected==true)
 		printf("Init is true\n");
 	else
 		printf("Init is false\n");
+#endif
 
     setInputParameters(iteration_max, threshold, damp,isUndirected);
 	hd_prdata().nV = hornet.nV();
@@ -92,10 +94,12 @@ void StaticPageRank::setInputParameters(int  iteration_max,
 	hd_prdata().normalized_damp = (1.0f - hd_prdata().damp) /
                                   static_cast<float>(hornet.nV());
 	this->isUndirected = isUndirected;
+#ifdef DEBUG
 	if(this->isUndirected==true)
 		printf("Init is true\n");
 	else
 		printf("Init is false\n");
+#endif
 }
 
 void StaticPageRank::run() {
@@ -104,11 +108,12 @@ void StaticPageRank::run() {
 
 	pr_t h_out = hd_prdata().threshold + 1;
 
+#ifdef DEBUG
 	if(this->isUndirected==true)
 		printf("Run is true\n");
 	else
 		printf("Run is false\n");
-
+#endif
 
 	while(hd_prdata().iteration < hd_prdata().iteration_max &&
           h_out > hd_prdata().threshold) {
@@ -116,10 +121,8 @@ void StaticPageRank::run() {
 		forAllnumV(hornet, ResetCurr { hd_prdata });
 		forAllVertices(hornet, ComputeContribuitionPerVertex { hd_prdata });
 		if (isUndirected == true){
-			printf("***");
 			forAllEdges(hornet, AddContribuitionsPush { hd_prdata }, load_balancing);
 		}else{
-			printf("###");
 			forAllEdges(hornet, AddContribuitionsPull { hd_prdata },load_balancing);
 		}
 		forAllnumV(hornet, DampAndDiffAndCopy { hd_prdata });

@@ -19,7 +19,6 @@ include_directories(${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality)
 # - library targets -------------------------------------------------------------------------------
 
 file(GLOB_RECURSE DUMMY         ${PROJECT_SOURCE_DIR}/src/Static/Dummy/Dummy.cu)
-file(GLOB_RECURSE BFS_SRCS      ${PROJECT_SOURCE_DIR}/src/Static/BreadthFirstSearch/TopDown.cu)
 file(GLOB_RECURSE BFS2_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/BreadthFirstSearch/TopDown2.cu)
 file(GLOB_RECURSE BC_SRCS       ${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality/bc.cu)
 file(GLOB_RECURSE BC_SRCS2      ${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality/approximate_bc.cu)
@@ -42,7 +41,6 @@ add_library(hornetAlg ${X_SRCS} ${H_SRCS} ${DUMMY} ${BFS_SRCS} ${BFS2_SRCS} ${BC
 # - add executables -------------------------------------------------------------------------------
 
 add_executable(dummy        test/DummyTest.cu)
-add_executable(bfs          test/BFSTest.cu)
 add_executable(bfs2         test/BFSTest2.cu)
 add_executable(bc	          test/BCTest.cu)
 add_executable(bubfs        test/BUBFSTest2.cu)
@@ -57,7 +55,6 @@ add_executable(clus-coeff   test/ClusCoeffTest.cu)
 add_executable(pr           test/PageRankTest.cu)
 
 target_link_libraries(dummy         hornetAlg)
-target_link_libraries(bfs           hornetAlg)
 target_link_libraries(bfs2          hornetAlg)
 target_link_libraries(bc            hornetAlg)
 target_link_libraries(bubfs         hornetAlg)

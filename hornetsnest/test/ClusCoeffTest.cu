@@ -1,5 +1,5 @@
 /**
- * @brief
+ * @brief Clustering coefficient test program
  * @file
  */
 

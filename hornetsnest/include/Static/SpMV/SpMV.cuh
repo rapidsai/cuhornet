@@ -1,6 +1,5 @@
 /**
- * @brief Top-Down implementation of Breadth-first Search by using C++11-Style
- *        APIs
+ * @brief Sparse Matrix-Vector Multiplication
  * @author Federico Busato                                                  <br>
  *         Univerity of Verona, Dept. of Computer Science                   <br>
  *         federico.busato@univr.it

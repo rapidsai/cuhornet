@@ -1,3 +1,9 @@
+
+/**
+ * @brief KCore decomposition test program
+ * @file
+ */
+
 #include "Static/KCore/KCore.cuh"
 #include <Device/Util/Timer.cuh>
 #include <Graph/GraphStd.hpp>
