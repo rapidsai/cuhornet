@@ -1,1 +1,0 @@
-clang-tidy -p=. ../src/* -header-filter=.* -checks=cert-*,-cert-err60-cpp,clang-analyzer-*,misc-*,performance-*,readability-*,-readability-named-parameter,modernize-*,google-*,llvm-* -config="{CheckOptions: [{key: readability-braces-around-statements.ShortStatementLines, value: 3}, {key: google-readability-braces-around-statements.ShortStatementLines, value: 3}]}"

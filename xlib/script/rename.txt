@@ -1,1 +1,0 @@
-find . -name "image*.png" | while read f; do mv -v "$f" "$(echo "$f" | sed -e 's/^\.\/image//' - )"; done
