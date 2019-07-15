@@ -34,7 +34,6 @@
 #include "Static/BUBreadthFirstSearch/BottomUpBFS.cuh"
 #include "Auxilary/DuplicateRemoving.cuh"
 #include <Graph/GraphStd.hpp>
-#include <Graph/BFS.hpp>
 
 namespace hornets_nest {
 
@@ -213,22 +212,6 @@ void BfsBottomUp2::release() {
 
 bool BfsBottomUp2::validate() {
   return true;
-    //std::cout << "\nTotal enqueue vertices: "
-    //          << xlib::format(queue.enqueue_items())
-    //          << std::endl;
-
-    //using namespace graph;
-    //GraphStd<vid_t, eoff_t> graph(hornet.csr_offsets(), hornet.nV(),
-    //                              hornet.csr_edges(), hornet.nE());
-
-
-    //BFS<vid_t, eoff_t> bfs(graph);
-    //bfs.run(bfs_source);
-
-    //auto h_distances = bfs.result();
-
-
-    //return gpu::equal(h_distances, h_distances + graph.nV(), d_distances);
 }
 
 } // namespace hornets_nest
