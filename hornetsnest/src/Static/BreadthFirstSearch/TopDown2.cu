@@ -35,7 +35,6 @@
  */
 #include "Static/BreadthFirstSearch/TopDown2.cuh"
 #include <Graph/GraphStd.hpp>
-#include <Graph/BFS.hpp>
 
 namespace hornets_nest {
 
@@ -105,18 +104,6 @@ void BfsTopDown2::release() {
 }
 
 bool BfsTopDown2::validate() {
-    std::cout << "\nTotal enqueue vertices: "
-              << xlib::format(queue.enqueue_items())
-              << std::endl;
-
-    // using namespace graph;
-    // GraphStd<vid_t, eoff_t> graph(hornet.csr_offsets(), hornet.nV(),
-    //                               hornet.csr_edges(), hornet.nE());
-    // BFS<vid_t, eoff_t> bfs(graph);
-    // bfs.run(bfs_source);
-    //
-    // auto h_distances = bfs.result();
-    // return gpu::equal(h_distances, h_distances + graph.nV(), d_distances);
     return true;
 }
 
