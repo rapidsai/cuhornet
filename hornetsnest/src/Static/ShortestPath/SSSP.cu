@@ -35,7 +35,6 @@
  */
 #include "Static/ShortestPath/SSSP.cuh"
 #include <Graph/GraphWeight.hpp>
-#include <Graph/BellmanFord.hpp>
 
 namespace hornets_nest {
 
