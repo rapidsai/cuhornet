@@ -98,9 +98,7 @@ HOST_DEVICE
 degree_t
 VERTEX::
 limit(void) const {
-    return xlib::max(static_cast<degree_t>(MIN_EDGES_PER_BLOCK),
-            PREFER_FASTER_UPDATE ? xlib::roundup_pow2(degree() + 1) :
-            xlib::roundup_pow2(degree()));
+    return xlib::roundup_pow2(degree());
 }
 
 template <typename... VertexMetaTypes, typename... EdgeMetaTypes,

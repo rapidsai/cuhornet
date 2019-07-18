@@ -62,7 +62,9 @@ reallocate_vertices(gpu::BatchUpdate<vid_t, TypeList<EdgeMetaTypes...>, degree_t
     CUDA_CHECK_LAST()
     for (degree_t i = 0; i < reallocated_vertices_count; i++) {
         auto ref = h_realloc_v_data[i];
-        _ba_manager.remove(ref.template get<0>(), ref.template get<1>(), ref.template get<2>());
+        if (ref.template get<0>() != 0) {
+          _ba_manager.remove(ref.template get<0>(), ref.template get<1>(), ref.template get<2>());
+        }
     }
     CUDA_CHECK_LAST()
 
