@@ -139,6 +139,10 @@ template<typename... Ts, DeviceType device_t, typename degree_t>
 EdgeAccessData<degree_t>
 B_A_MANAGER::
 insert(const degree_t requested_degree) noexcept {
+  if (requested_degree == 0) {
+    EdgeAccessData<degree_t> ea = {0, 0, 0};
+    return ea;
+  }
     int bin_index = find_bin(requested_degree);
     for (auto &ba : _ba_map[bin_index]) {
         if (!ba.second.full()) {
