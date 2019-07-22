@@ -38,6 +38,7 @@
 #include <Device/Util/SafeCudaAPI.cuh>      //cuMemcpyToDeviceAsync
 //#include <BasicTypes.hpp>
 #include <Core/Hornet.cuh>
+#include <Core/Static/HornetStatic.cuh>
 #include "StandardAPI.hpp"
 
 namespace hornets_nest {
@@ -53,7 +54,7 @@ template<typename HornetClass>
 TwoLevelQueue<T>::TwoLevelQueue(const HornetClass& hornet,
                                 const float work_factor) noexcept :
                               _max_allocated_items(hornet.nV() * work_factor) {
-    static_assert(hornet::IsHornet<HornetClass>::value,
+    static_assert(hornet::IsHornet<HornetClass>::value || hornet::IsHornetStatic<HornetClass>::value,
                  "TwoLevelQueue paramenter is not an instance of Hornet Class");
     _initialize();
 }
