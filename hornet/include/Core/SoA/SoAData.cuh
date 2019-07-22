@@ -133,7 +133,9 @@ class CSoAData<TypeList<Ts...>, device_t> {
 
     const CSoAPtr<Ts...>& get_soa_ptr(void) const noexcept;
 
-    void copy(SoAPtr<Ts...> other, const DeviceType other_d_t, const int other_num_items) noexcept;
+    void copy(SoAPtr<Ts const...> other, DeviceType other_d_t, int other_num_items) noexcept;
+
+    void copy(SoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept;
 
     template<DeviceType d_t>
     void copy(CSoAData<TypeList<Ts...>, d_t>&& other) noexcept;

@@ -5,6 +5,10 @@ namespace gpu {
 
 template <typename... VertexMetaTypes, typename... EdgeMetaTypes,
     typename vid_t, typename degree_t>
+int HORNETSTATIC::_instance_count = 0;
+
+template <typename... VertexMetaTypes, typename... EdgeMetaTypes,
+    typename vid_t, typename degree_t>
 HORNETSTATIC::
 HornetStatic(HORNETSTATIC::HInitT& h_init) noexcept :
     _nV(h_init.nV()),
