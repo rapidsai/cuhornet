@@ -42,7 +42,7 @@ add_library(hornetAlg ${X_SRCS} ${H_SRCS} ${DUMMY} ${BFS_SRCS} ${BFS2_SRCS} ${BC
 
 add_executable(dummy        test/DummyTest.cu)
 add_executable(bfs2         test/BFSTest2.cu)
-add_executable(bc	          test/BCTest.cu)
+add_executable(bc	        test/BCTest.cu)
 add_executable(bubfs        test/BUBFSTest2.cu)
 add_executable(con-comp     test/CCTest.cu)
 add_executable(spmv         test/SpMVTest.cu)
@@ -53,6 +53,8 @@ add_executable(kcore        test/KCoreTest.cu)
 add_executable(triangle2    test/TriangleTest2.cu)
 add_executable(clus-coeff   test/ClusCoeffTest.cu)
 add_executable(pr           test/PageRankTest.cu)
+add_executable(bcMulti      test/BCMultiTest.cu)
+
 
 target_link_libraries(dummy         hornetAlg)
 target_link_libraries(bfs2          hornetAlg)
@@ -67,3 +69,5 @@ target_link_libraries(kcore         hornetAlg)
 target_link_libraries(triangle2     hornetAlg)
 target_link_libraries(clus-coeff    hornetAlg)
 target_link_libraries(pr            hornetAlg)
+target_link_libraries(bcMulti       hornetAlg)
+
