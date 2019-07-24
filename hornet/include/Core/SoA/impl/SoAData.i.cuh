@@ -526,7 +526,15 @@ get_soa_ptr(void) const noexcept {
 template<typename... Ts, DeviceType device_t>
 void
 CSoAData<TypeList<Ts...>, device_t>::
-copy(SoAPtr<Ts...> other, const DeviceType other_d_t, const int other_num_items) noexcept {
+copy(SoAPtr<Ts const...> other, DeviceType other_d_t, int other_num_items) noexcept {
+    int _item_count = std::min(other_num_items, _num_items);
+    RecursiveCopy<0, sizeof...(Ts) - 1>::copy(other, other_d_t, _soa, device_t, _item_count);
+}
+
+template<typename... Ts, DeviceType device_t>
+void
+CSoAData<TypeList<Ts...>, device_t>::
+copy(SoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept {
     int _item_count = std::min(other_num_items, _num_items);
     RecursiveCopy<0, sizeof...(Ts) - 1>::copy(other, other_d_t, _soa, device_t, _item_count);
 }

@@ -19,7 +19,6 @@ include_directories(${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality)
 # - library targets -------------------------------------------------------------------------------
 
 file(GLOB_RECURSE DUMMY         ${PROJECT_SOURCE_DIR}/src/Static/Dummy/Dummy.cu)
-file(GLOB_RECURSE BFS2_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/BreadthFirstSearch/TopDown2.cu)
 file(GLOB_RECURSE BC_SRCS       ${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality/bc.cu)
 file(GLOB_RECURSE BC_SRCS2      ${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality/approximate_bc.cu)
 file(GLOB_RECURSE BC_SRCS3      ${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality/exact_bc.cu)
@@ -35,7 +34,7 @@ file(GLOB_RECURSE TRI2_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/TriangleCountin
 file(GLOB_RECURSE X_SRCS        ${PROJECT_SOURCE_DIR}/../xlib/src/*)
 file(GLOB_RECURSE H_SRCS        ${PROJECT_SOURCE_DIR}/../hornet/src/*)
 
-add_library(hornetAlg ${X_SRCS} ${H_SRCS} ${DUMMY} ${BFS_SRCS} ${BFS2_SRCS} ${BC_SRCS} ${BC_SRCS2} ${BC_SRCS3} ${BUBFS_SRC} ${CC_SRCS} ${CLCOEFF_SRCS} ${SSSP_SRCS} ${SPMV_SRCS} ${PR_SRCS} ${KATZ_SRCS} ${KCORE_SRCS} ${TRI2_SRCS})
+add_library(hornetAlg ${X_SRCS} ${H_SRCS} ${DUMMY} ${BFS_SRCS} ${BC_SRCS} ${BC_SRCS2} ${BC_SRCS3} ${BUBFS_SRC} ${CC_SRCS} ${CLCOEFF_SRCS} ${SSSP_SRCS} ${SPMV_SRCS} ${PR_SRCS} ${KATZ_SRCS} ${KCORE_SRCS} ${TRI2_SRCS})
 
 ###################################################################################################
 # - add executables -------------------------------------------------------------------------------
