@@ -167,8 +167,8 @@ __global__ void swapKernel(int2* d_counters) {
 template<typename T>
 void TwoLevelQueue<T>::sync() const noexcept {
     cuMemcpyToHost(_d_counters, _h_counters);
-    assert(_h_counters.x < _max_allocated_items && "TwoLevelQueue too small");
-    assert(_h_counters.y < _max_allocated_items && "TwoLevelQueue too small");
+    assert(_h_counters.x <= _max_allocated_items && "TwoLevelQueue too small");
+    assert(_h_counters.y <= _max_allocated_items && "TwoLevelQueue too small");
 }
 
 template<typename T>
