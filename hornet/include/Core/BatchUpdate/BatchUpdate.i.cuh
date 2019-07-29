@@ -158,12 +158,12 @@ void
 BATCH_UPDATE::
 reset(BatchUpdatePtr<vid_t, TypeList<EdgeMetaTypes...>, device_t, degree_t> ptr) noexcept {
     _nE = ptr.nE();
-    _edge[0].resize(_nE);
-    _edge[1].resize(_nE);
-    unique_sources.resize(_nE);
+    _edge[0].resize(_nE + 1);
+    _edge[1].resize(_nE + 1);
+    unique_sources.resize(_nE + 1);
     unique_degrees.resize(_nE + 1);
     duplicate_flag.resize(_nE + 1);
-    cub_runlength.resize(_nE);
+    cub_runlength.resize(_nE + 1);
     batch_offsets.resize(_nE + 1);
     graph_offsets.resize(_nE + 1);
     cub_prefixsum.resize(_nE + 1);
@@ -171,15 +171,15 @@ reset(BatchUpdatePtr<vid_t, TypeList<EdgeMetaTypes...>, device_t, degree_t> ptr)
     current_edge = 0;
     in_edge().copy(ptr.get_ptr(), device_t, (int)_nE);
     if (1 < sizeof...(EdgeMetaTypes)) {
-        in_range().resize(_nE);
-        out_range().resize(_nE);
+         in_range().resize(_nE + 1);
+        out_range().resize(_nE + 1);
     }
 
-    vertex_access[0].resize(_nE);
-    vertex_access[1].resize(_nE);
-    host_vertex_access[0].resize(_nE);
-    host_vertex_access[1].resize(_nE);
-    realloc_sources.resize(_nE);
+    vertex_access[0].resize(_nE + 1);
+    vertex_access[1].resize(_nE + 1);
+    host_vertex_access[0].resize(_nE + 1);
+    host_vertex_access[1].resize(_nE + 1);
+    realloc_sources.resize(_nE + 1);
     realloc_sources_count_buffer.resize(1);
 }
 
