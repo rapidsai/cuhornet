@@ -36,6 +36,32 @@
 namespace hornet {
 
 //==============================================================================
+///////////////////
+// RecursiveFill //
+///////////////////
+
+template<int N, int SIZE>
+struct RecursiveFillNull {
+  template<typename degree_t, typename... Ts>
+  static void fillNull(SoAPtr<Ts...> ptr, degree_t length) {
+    auto tptr = thrust::device_pointer_cast(ptr.template get<N>());
+    thrust::fill(tptr, tptr + length,
+         static_cast<typename xlib::SelectType<N, Ts...>::type>(0));
+    RecursiveFillNull<N+1, SIZE>::fillNull(ptr, length);
+  }
+};
+
+template<int N>
+struct RecursiveFillNull<N, N> {
+  template<typename degree_t, typename... Ts>
+  static void fillNull(SoAPtr<Ts...> ptr, degree_t length) {
+    auto tptr = thrust::device_pointer_cast(ptr.template get<N>());
+    thrust::fill(tptr, tptr + length,
+         static_cast<typename xlib::SelectType<N, Ts...>::type>(0));
+  }
+};
+
+//==============================================================================
 /////////////////////
 // RecursiveAssign //
 /////////////////////
