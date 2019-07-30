@@ -17,8 +17,6 @@ using Init = hornet::HornetInit<vert_t>;
 using hornet::SoAData;
 using hornet::TypeList;
 using hornet::DeviceType;
-using hornet::print;
-//using hornet::generateBatchData;
 
 //#define RANDOM
 
