@@ -582,7 +582,8 @@ void CubExclusiveSum<T>::initialize(const int max_items) noexcept {
     T* d_in = nullptr, *d_out = nullptr;
     cub::DeviceScan::ExclusiveSum(nullptr, temp_storage_bytes,
                                   d_in, d_out, _num_items);
-    cuMalloc(_d_temp_storage, temp_storage_bytes);
+    if (temp_storage_bytes)
+        cuMalloc(_d_temp_storage, temp_storage_bytes);
 }
 
 //------------------------------------------------------------------------------
@@ -661,11 +662,12 @@ template<typename T>
 void CubInclusiveMax<T>::initialize(const int max_items) noexcept {
     CubMax max_op;
     CubWrapper::initialize(max_items);
-    size_t temp_storage_bytes;
+    size_t temp_storage_bytes = 0;
     T* d_in = nullptr, *d_out = nullptr;
     cub::DeviceScan::InclusiveScan(nullptr, temp_storage_bytes,
                                   d_in, d_out, max_op, _num_items);
-    cuMalloc(_d_temp_storage, _temp_storage_bytes);
+    if (temp_storage_bytes)
+        cuMalloc(_d_temp_storage, temp_storage_bytes);
 }
 
 //------------------------------------------------------------------------------
