@@ -219,6 +219,9 @@ int main(int argc, char* argv[]) {
     TM.stop();
     TM.print("MultiGPU Time");
 
+    bc_t sumM1 = thrust::reduce(thrust::device, mgpuGlobalBC,mgpuGlobalBC+graph.nV(),0.0);
+
+    cout << "Total BC scores (multi )   : " << sumM1 << endl;
 
 
     #pragma omp parallel
@@ -233,6 +236,8 @@ int main(int argc, char* argv[]) {
 
 
     delete[] hornetArray;
+
+
 
     printf("woohooo\n");
 
