@@ -4,10 +4,25 @@
 
 namespace hornets_nest {
 
-const bool _FORCE_SOA = true;
+// const bool _FORCE_SOA = true;
 
 using triangle_t = int;
-using HornetGraph = gpu::Hornet<EMPTY, TypeList<triangle_t>, _FORCE_SOA>;
+
+using HornetGraph = hornet::gpu::Hornet<vert_t>;
+// using HornetGraph = gpu::Hornet<vert_t>;
+
+
+
+using HornetInit  = ::hornet::HornetInit<vert_t>;
+
+using UpdatePtr   = ::hornet::BatchUpdatePtr<vert_t, hornet::EMPTY, hornet::DeviceType::DEVICE>;
+using Update      = ::hornet::gpu::BatchUpdate<vert_t>;
+
+// using wgt0_t = int;
+
+// using Init = hornet::HornetInit<vert_t, hornet::EMPTY, hornet::TypeList<wgt0_t>>;
+// using KTrussHornet = hornet::gpu::Hornet<vert_t, hornet::EMPTY, hornet::TypeList<wgt0_t>>;
+
 
 struct KTrussData {
     int max_K;
@@ -23,16 +38,16 @@ struct KTrussData {
     int* triangles_per_edge;
     int* triangles_per_vertex;
 
-    vid_t* src;
-    vid_t* dst;
-    int    counter;
-    int    active_vertices;
+    vert_t* src;
+    vert_t* dst;
+    int*    counter;
+    int*    active_vertices;
 
-    TwoLevelQueue<vid_t> active_queue; // Stores all the active vertices
+    TwoLevelQueue<vert_t> active_queue; // Stores all the active vertices
 
     int full_triangle_iterations;
 
-    vid_t nv;
+    vert_t nv;
     off_t ne;                  // undirected-edges
     off_t num_edges_remaining; // undirected-edges
 };
@@ -62,31 +77,39 @@ public:
     bool findTrussOfKDynamic(bool& stop);
     void runForKDynamic(int max_K);
 
-    void copyOffsetArrayHost(vid_t* host_offset_array);
-    void copyOffsetArrayDevice(vid_t* device_offset_array);
+    void copyOffsetArrayHost(const vert_t* host_offset_array);
+    void copyOffsetArrayDevice(vert_t* device_offset_array);
     void resetEdgeArray();
     void resetVertexArray();
 
-    vid_t getIterationCount();
-    vid_t getMaxK();
+    vert_t getIterationCount();
+    vert_t getMaxK();
 
 private:
     HostDeviceVar<KTrussData> hd_data;
+
+    vert_t originalNE;
+    vert_t originalNV;
 
     //load_balancing::BinarySearch load_balancing;
     //load_balancing::VertexBased1 load_balancing;
 };
 
+#define CHECK_ERROR(str) \
+    {cudaError_t err; err = cudaGetLastError(); if(err!=0) {printf("ERROR %s:  %d %s\n", str, err, cudaGetErrorString(err)); fflush(stdout); exit(0);}}
+
+
+
 //==============================================================================
 
-void callDeviceDifferenceTriangles(const HornetGraph& hornet,
-                                   const gpu::BatchUpdate& batch_update,
-                                   triangle_t* __restrict__ output_triangles,
-                                   int threads_per_intersection,
-                                   int num_intersec_perblock,
-                                   int shifter,
-                                   int thread_blocks,
-                                   int blockdim,
-                                   bool deletion);
+// void callDeviceDifferenceTriangles(const HornetGraph& hornet,
+//                                    const gpu::BatchUpdate& batch_update,
+//                                    triangle_t* __restrict__ output_triangles,
+//                                    int threads_per_intersection,
+//                                    int num_intersec_perblock,
+//                                    int shifter,
+//                                    int thread_blocks,
+//                                    int blockdim,
+//                                    bool deletion);
 
 } // namespace hornets_nest
