@@ -110,8 +110,9 @@ int main(int argc, char* argv[]) {
     CommandLineParam cmd(graph, argc, argv,false);
     Timer<DEVICE> TM;
 
-    int numHardwareGPUs=8;
-    int numGPUs=8;
+    // int numHardwareGPUs=16;
+    int numGPUs=2;
+    int testSingleFlag=0;
 
     int numRoots = 100;
     // int numRoots = graph.nV();
@@ -130,26 +131,124 @@ int main(int argc, char* argv[]) {
 
     cudaMemset(mgpuGlobalBC,0, sizeof(bc_t)*graph.nV());
 
-    omp_set_num_threads(numGPUs);
+      int original_number_threads = 0;
+    #pragma omp parallel
+    {
+        if (omp_get_thread_num() == 0)
+          original_number_threads = omp_get_num_threads();
+    }
+
+
+
+    // cout << "Number of GPUs is : " << numGPUs << endl;
+    
+    // #pragma omp parallel
+    {
+        omp_set_num_threads(numGPUs);
+    }
 
     bc_t* bcArray[numGPUs];
 
-    paths_t *singleGPUSigma,*multiGPUSigma; 
-    bc_t *singleGPUDelta,*multiGPUDelta; 
 
-    gpu::allocate(singleGPUSigma, graph.nV());
-    gpu::allocate(multiGPUSigma, graph.nV());
-    gpu::allocate(singleGPUDelta, graph.nV());
-    gpu::allocate(multiGPUDelta, graph.nV());
 
+    graph::GraphStd<vert_t, vert_t> graph2;
+    CommandLineParam cmd2(graph2, argc, argv,false);
+
+
+    using HornetGPU = hornet::gpu::Hornet<vert_t>;
+    using Init = hornet::HornetInit<vert_t>;
+    using HornetGPUPtr = HornetGPU*;
+
+    HornetGPUPtr* hornetArray;
+    hornetArray = new HornetGPUPtr[numGPUs]; 
+
+    #pragma omp parallel
+    {
+        int64_t thread_id = omp_get_thread_num();
+//        cudaSetDevice(thread_id%numHardwareGPUs);
+        cudaSetDevice(thread_id);
+        hornetArray[thread_id] = new HornetGPU();
+
+        Init hornet_init(graph2.nV(), graph2.nE(), graph2.csr_out_offsets(),
+                               graph2.csr_out_edges());
+
+        hornetArray[thread_id]->reset(hornet_init);
+    }
+    cudaSetDevice(0);
     TM.start();
 
     // Create a single Hornet Graph for each GPU
     #pragma omp parallel
     {
         int64_t thread_id = omp_get_thread_num();
+//        cudaSetDevice(thread_id%numHardwareGPUs);
+        cudaSetDevice(thread_id);
 
-        cudaSetDevice(thread_id%numHardwareGPUs);
+        vid_t* roots = new vid_t[graph.nV()/numGPUs+1];
+
+        int i=0;
+        for(int v=thread_id; v<numRoots; v+=numGPUs){
+            roots[i++]=v;
+        }
+
+        ApproximateBC abc(*hornetArray[thread_id],roots,i);
+        abc.reset();
+
+        abc.run();
+
+        bcArray[thread_id] = abc.getBCScores();
+
+        #pragma omp barrier
+
+        #pragma omp master
+        {
+            cudaSetDevice(0);
+
+            for(int t=0; t<numGPUs;t++){
+                cudaMemcpy(temp,bcArray[t],sizeof(bc_t)*graph.nV(), cudaMemcpyDeviceToDevice);
+                thrust::transform(thrust::device,mgpuGlobalBC, mgpuGlobalBC+graph.nV(), temp, mgpuGlobalBC,
+                   thrust::plus<bc_t>());
+            }
+        }
+        #pragma omp barrier
+
+        delete[] roots;
+    }
+
+    cudaSetDevice(0);
+    TM.stop();
+    TM.print("MultiGPU Time");
+
+
+
+    #pragma omp parallel
+    {
+        int64_t thread_id = omp_get_thread_num();
+//        cudaSetDevice(thread_id%numHardwareGPUs);
+        cudaSetDevice(thread_id);
+
+        delete hornetArray[thread_id];
+    }
+
+
+
+    delete[] hornetArray;
+
+    printf("woohooo\n");
+
+    cudaSetDevice(0);
+    TM.start();
+
+    cudaMemset(mgpuGlobalBC,0, sizeof(bc_t)*graph.nV());
+
+
+    // Create a single Hornet Graph for each GPU
+    #pragma omp parallel
+    {
+        int64_t thread_id = omp_get_thread_num();
+
+//        cudaSetDevice(thread_id%numHardwareGPUs);
+        cudaSetDevice(thread_id);
 
         HornetInit hornet_init(graph.nV(), graph.nE(), graph.csr_out_offsets(),
                                graph.csr_out_edges());
@@ -169,11 +268,6 @@ int main(int argc, char* argv[]) {
         delete[] roots;
 
         abc.run();
-
-        if(thread_id==0){
-            cudaMemcpy(multiGPUSigma,abc.getSigmas(),sizeof(paths_t)*graph.nV(), cudaMemcpyDeviceToDevice);
-            cudaMemcpy(multiGPUDelta,abc.getDeltas(),sizeof(bc_t)*graph.nV(), cudaMemcpyDeviceToDevice);
-        }
 
         bcArray[thread_id] = abc.getBCScores();
 
@@ -201,10 +295,11 @@ int main(int argc, char* argv[]) {
         // cout << "Total BC scores (multi ) : " << sumM << endl;
 
     }
+
+    cudaSetDevice(0);
     TM.stop();
     TM.print("MultiGPU Time");
 
-    cudaSetDevice(0);
 
     gpu::free(temp);
 
@@ -246,9 +341,6 @@ int main(int argc, char* argv[]) {
     TM.stop();
     TM.print("SingleGPU Time");
 
-    cudaMemcpy(singleGPUSigma,abc.getSigmas(),sizeof(paths_t)*graph.nV(), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(singleGPUDelta,abc.getDeltas(),sizeof(bc_t)*graph.nV(), cudaMemcpyDeviceToDevice);
-
 
     thrust::transform(thrust::device,mgpuGlobalBC, mgpuGlobalBC+graph.nV(), abc.getBCScores(), diff,
                thrust::minus<bc_t>());                
@@ -262,60 +354,16 @@ int main(int argc, char* argv[]) {
     cout << "Total difference in sum is : " << diffS << endl;
 
 
-
-
-    paths_t *sigmaDiff;
-    bc_t *deltaDiff;
-
-    gpu::allocate(sigmaDiff, graph.nV());
-    gpu::allocate(deltaDiff, graph.nV());
-
-    thrust::transform(thrust::device,multiGPUSigma, multiGPUSigma+graph.nV(), singleGPUSigma, sigmaDiff, thrust::minus<bc_t>());                
-    thrust::transform(thrust::device,sigmaDiff, sigmaDiff+graph.nV(), sigmaDiff, sigmaDiff, thrust::multiplies<bc_t>());                
-    paths_t sumSquarePath = thrust::reduce(thrust::device,  sigmaDiff, sigmaDiff+graph.nV(),0);
-
-    thrust::transform(thrust::device,multiGPUDelta, multiGPUDelta+graph.nV(), singleGPUDelta, deltaDiff, thrust::minus<bc_t>());                
-    // thrust::transform(thrust::device,deltaDiff, deltaDiff+graph.nV(), deltaDiff, deltaDiff, thrust::multiplies<bc_t>());                
-    bc_t sumSquareDelta = thrust::reduce(thrust::device,  deltaDiff, deltaDiff+graph.nV(),0.0);
-
-
-    bc_t* cubsum, h_cubsum;
-    gpu::allocate(cubsum, 1);
-
     // Determine temporary device storage requirements
     void     *d_temp_storage = NULL;
     size_t   temp_storage_bytes = 0;
 
-    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, deltaDiff, cubsum, graph.nV());
-    cudaMalloc(&d_temp_storage,temp_storage_bytes);
 
-    cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, deltaDiff, cubsum, graph.nV());
-    cudaFree(d_temp_storage);
-
-    cudaMemcpy(&h_cubsum,cubsum,sizeof(bc_t), cudaMemcpyDeviceToHost);
-
-
-
-    gpu::free(cubsum);
-
-    cout << "Total sum square diff of sigma : " << sumSquarePath << endl;
-    cout << "Total THRUSTsum square diff of delta : " << sumSquareDelta << endl;
-    cout << "Total CUBsum square diff of delta : " << h_cubsum << endl;
-
-
-
-    gpu::free(sigmaDiff);
-    gpu::free(deltaDiff);
-
-
-
-    gpu::free(multiGPUSigma);
-    gpu::free(singleGPUSigma);
 
     gpu::free(diff);
     gpu::free(sgpuGlobalBC);
     gpu::free(mgpuGlobalBC);
 
 
-
+    omp_set_num_threads(original_number_threads);
 }
