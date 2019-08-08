@@ -63,6 +63,11 @@ public:
     degree_t nE(void) const noexcept;
 
     HornetDeviceT device(void) noexcept;
+
+    vid_t max_degree_id(void) const noexcept;
+
+    degree_t max_degree(void) const noexcept;
+
 };
 
 #define HORNETSTATIC HornetStatic<vid_t,\
