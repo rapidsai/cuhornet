@@ -60,7 +60,7 @@ int exec(int argc, char* argv[]) {
     HornetInit hornet_init(graph.nV(), graph.nE(), graph.csr_out_offsets(), graph.csr_out_edges());
 
     HornetGraph hornet_graph(hornet_init);
-	// Users can add the number of TopK vertices for the approximation
+ 	  // Users can add the number of TopK vertices for the approximation
 	  int topK = graph.nV();
      if(argc>2)
         topK=atoi(argv[2]);
@@ -68,15 +68,10 @@ int exec(int argc, char* argv[]) {
     // Finding largest vertex degreemake
     degree_t max_degree_vertex = hornet_graph.max_degree();
     std::cout << "Max degree vextex is " << max_degree_vertex << std::endl;
-    // degree_t max_degree_vertex = graph.nV();//hornet_graph.max_degree();
-    // std::cout << "Max degree vextex is " << max_degree_vertex << std::endl;
 
 
     Katz kcPostUpdate(hornet_graph, max_iterations, topK, max_degree_vertex);
 
-
-    // KatzCentrality<HornetGraph> kcPostUpdate(hornet_graph, max_iterations, topK,
-                                // max_degree_vertex);
 
     Timer<DEVICE> TM;
     TM.start();
@@ -105,8 +100,11 @@ int main(int argc, char* argv[]) {
     {//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
 #endif
 
-    // ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityStatic>(argc, argv);
-    ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityDynamicH>(argc, argv);
+      for(int i=0; i<10; i++){
+          ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityDynamicH>(argc, argv);
+          ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityStatic>(argc, argv);
+        
+      }
 
 #if defined(RMM_WRAPPER)
     }//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
