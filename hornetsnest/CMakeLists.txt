@@ -29,14 +29,14 @@ file(GLOB_RECURSE SSSP_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/ShortestPath/SS
 file(GLOB_RECURSE SPMV_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/SpMV/SpMV.cu)
 file(GLOB_RECURSE PR_SRCS       ${PROJECT_SOURCE_DIR}/src/Static/PageRank/PageRank.cu)
 file(GLOB_RECURSE KCORE_SRCS    ${PROJECT_SOURCE_DIR}/src/Static/KCore/KCore.cu)
-file(GLOB_RECURSE KATZ_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/KatzCentrality/Katz.cu)
+# file(GLOB_RECURSE KATZ_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/KatzCentrality/Katz.cu)
 file(GLOB_RECURSE TRI2_SRCS     ${PROJECT_SOURCE_DIR}/src/Static/TriangleCounting/triangle2.cu)
 file(GLOB_RECURSE KTRUSS_SRCS   ${PROJECT_SOURCE_DIR}/src/Static/KTruss/KTruss.cu)
 # file(GLOB_RECURSE KTRUSS_SRCS   ${PROJECT_SOURCE_DIR}/src/Static/KTruss/KTrussSupport.cu)
 file(GLOB_RECURSE X_SRCS        ${PROJECT_SOURCE_DIR}/../xlib/src/*)
 file(GLOB_RECURSE H_SRCS        ${PROJECT_SOURCE_DIR}/../hornet/src/*)
 
-add_library(hornetAlg ${X_SRCS} ${H_SRCS} ${DUMMY} ${BFS_SRCS} ${BC_SRCS} ${BC_SRCS2} ${BC_SRCS3} ${BUBFS_SRC} ${CC_SRCS} ${CLCOEFF_SRCS} ${SSSP_SRCS} ${SPMV_SRCS} ${PR_SRCS} ${KATZ_SRCS} ${KCORE_SRCS} ${TRI2_SRCS})
+add_library(hornetAlg ${X_SRCS} ${H_SRCS} ${DUMMY} ${BFS_SRCS} ${BC_SRCS} ${BC_SRCS2} ${BC_SRCS3} ${BUBFS_SRC} ${CC_SRCS} ${CLCOEFF_SRCS} ${SSSP_SRCS} ${SPMV_SRCS} ${PR_SRCS}  ${KCORE_SRCS} ${TRI2_SRCS})
 
 ###################################################################################################
 # - add executables -------------------------------------------------------------------------------

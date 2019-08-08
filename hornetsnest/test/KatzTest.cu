@@ -41,6 +41,7 @@
 #include <Device/Util/Timer.cuh>
 #include <Graph/GraphStd.hpp>
 
+template <typename HornetGraph,typename Katz>
 int exec(int argc, char* argv[]) {
     using namespace graph::structure_prop;
     using namespace graph::parsing_prop;
@@ -51,29 +52,31 @@ int exec(int argc, char* argv[]) {
 	// Limit the number of iteartions for graphs with large number of vertices.
     int max_iterations = 50;
 
-
-	cudaSetDevice(0);
-    GraphStd<vid_t, eoff_t> graph(UNDIRECTED);
+	  cudaSetDevice(0);
+    GraphStd<vert_t, vert_t> graph(UNDIRECTED);
     
     graph.read(argv[1], SORT | PRINT_INFO);
 
-    HornetInit hornet_init(graph.nV(), graph.nE(),
-                           graph.csr_out_offsets(),
-                           graph.csr_out_edges());
+    HornetInit hornet_init(graph.nV(), graph.nE(), graph.csr_out_offsets(), graph.csr_out_edges());
 
     HornetGraph hornet_graph(hornet_init);
 	// Users can add the number of TopK vertices for the approximation
-	int           topK = graph.nV();
+	  int topK = graph.nV();
      if(argc>2)
         topK=atoi(argv[2]);
  
-    // Finding largest vertex degree
+    // Finding largest vertex degreemake
     degree_t max_degree_vertex = hornet_graph.max_degree();
     std::cout << "Max degree vextex is " << max_degree_vertex << std::endl;
+    // degree_t max_degree_vertex = graph.nV();//hornet_graph.max_degree();
+    // std::cout << "Max degree vextex is " << max_degree_vertex << std::endl;
 
 
-    KatzCentrality kcPostUpdate(hornet_graph, max_iterations, topK,
-                                max_degree_vertex);
+    Katz kcPostUpdate(hornet_graph, max_iterations, topK, max_degree_vertex);
+
+
+    // KatzCentrality<HornetGraph> kcPostUpdate(hornet_graph, max_iterations, topK,
+                                // max_degree_vertex);
 
     Timer<DEVICE> TM;
     TM.start();
@@ -102,7 +105,8 @@ int main(int argc, char* argv[]) {
     {//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
 #endif
 
-    ret = exec(argc, argv);
+    // ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityStatic>(argc, argv);
+    ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityDynamicH>(argc, argv);
 
 #if defined(RMM_WRAPPER)
     }//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
