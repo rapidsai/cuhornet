@@ -96,7 +96,9 @@ int exec(int argc, char* argv[]) {
     std::cout << "Max degree vextex is " << max_degree_vertex << std::endl;
 
 
-    Katz kcStatIc(hornet_graph, max_iterations, max_degree_vertex);
+    // Katz kcStatIc(hornet_graph, max_iterations, max_degree_vertex);
+    float alpha = 1.0/(max_degree_vertex+1.0); 
+    Katz kcStatIc(hornet_graph, max_iterations,alpha);
 
 
     Timer<DEVICE> TM;
@@ -110,10 +112,10 @@ int exec(int argc, char* argv[]) {
 
     kcStatIc.copyKCToHost(h_kcArray);
 
-    for (int v=0; v<hornet_graph.nV(); v++){
-      printf("%lf, ", h_kcArray[v]);
-    }
-    printf("\n");
+    // for (int v=0; v<hornet_graph.nV(); v++){
+    //   printf("%lf, ", h_kcArray[v]);
+    // }
+    // printf("\n");
 
     auto total_time = TM.duration();
     std::cout << "The number of iterations     : "
