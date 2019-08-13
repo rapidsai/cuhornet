@@ -60,16 +60,10 @@ struct KatzData {
     ulong_t*  num_paths_prev;
 
     double*   KC;
-    double*   lower_bound;
-    double*   upper_bound;
 
     double alpha;
     double alphaI; // Alpha to the power of I  (being the iteration)
 
-    double lower_bound_const;
-    double upper_bound_const;
-
-    int K;
 
     int max_degree;
     int iteration;
@@ -80,10 +74,6 @@ struct KatzData {
     int nV;
 
     bool*   is_active;
-    double* lower_bound_unsorted;
-    double* lower_bound_sorted;
-    int*    vertex_array_unsorted; // Sorting
-    int*    vertex_array_sorted;   // Sorting
 };
 
 // Label propogation is based on the values from the previous iteration.
@@ -91,7 +81,7 @@ template <typename HornetGraph>
 class KatzCentrality : public StaticAlgorithm<HornetGraph> {
 public:
     KatzCentrality(HornetGraph& hornet, int max_iteration,
-                   int K, int max_degree, bool is_static = true);
+                   int max_degree, bool is_static = true);
     ~KatzCentrality();
 
     void reset()    override;
@@ -112,7 +102,6 @@ private:
     ulong_t**                   h_paths_ptr;
     bool                        is_static;
 
-    void printKMostImportant();
 };
 
 
@@ -154,46 +143,46 @@ struct UpdatePathCount {
     OPERATOR(Vertex& src, Edge& edge){
         auto src_id = src.id();
         auto dst_id = edge.dst_id();
-        atomicAdd(kd().num_paths_curr + src_id,
-                  kd().num_paths_prev[dst_id]);
+        atomicAdd(kd().num_paths_curr + src_id, kd().num_paths_prev[dst_id]);
+        // atomicMax(kd().num_paths_curr + src_id,1);
     }
 };
 
 //------------------------------------------------------------------------------
 
-struct UpdateKatzAndBounds {
+struct AddOwnCount {
+    HostDeviceVar<KatzData> kd;
+
+    OPERATOR(vert_t src) {
+        atomicAdd(kd().num_paths_curr + src, kd().num_paths_prev[src]);
+
+    }
+};
+
+
+
+//------------------------------------------------------------------------------
+
+struct UpdateKatz {
     HostDeviceVar<KatzData> kd;
 
     OPERATOR(vert_t src) {
         kd().KC[src] = kd().KC[src] + kd().alphaI *
                         static_cast<double>(kd().num_paths_curr[src]);
-        kd().lower_bound[src] = kd().KC[src] + kd().lower_bound_const *
-                                static_cast<double>(kd().num_paths_curr[src]);
-        kd().upper_bound[src] = kd().KC[src] + kd().upper_bound_const *
-                                static_cast<double>(kd().num_paths_curr[src]);
+        // kd().lower_bound[src] = kd().KC[src] + kd().lower_bound_const *
+        //                         static_cast<double>(kd().num_paths_curr[src]);
+        // kd().upper_bound[src] = kd().KC[src] + kd().upper_bound_const *
+        //                         static_cast<double>(kd().num_paths_curr[src]);
 
-        if (kd().is_active[src]) {
-            int pos = atomicAdd(&(kd.ptr()->num_active), 1);
-            kd().vertex_array_unsorted[pos] = src;
-            kd().lower_bound_unsorted[pos]  = kd().lower_bound[src];
-        }
+        // if (kd().is_active[src]) {
+        //     int pos = atomicAdd(&(kd.ptr()->num_active), 1);
+        //     kd().vertex_array_unsorted[pos] = src;
+        //     kd().lower_bound_unsorted[pos]  = kd().lower_bound[src];
+        // }
     }
 };
 
 //------------------------------------------------------------------------------
-
-struct CountActive {
-    HostDeviceVar<KatzData> kd;
-
-    OPERATOR(vert_t src) {
-        auto index = kd().vertex_array_sorted[kd().num_prev_active - kd().K];
-        if (kd().upper_bound[src] > kd().lower_bound[index])
-            atomicAdd(&(kd.ptr()->num_active), 1);
-        else
-            kd().is_active[src] = false;
-    }
-};
-
 
 
 
@@ -205,7 +194,7 @@ struct CountActive {
 using length_t = int;
 
 template <typename HornetGraph>
-KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration, int K,
+KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration, 
                                int max_degree, bool is_static) :
                                        StaticAlgorithm<HornetGraph>(hornet),
                                        load_balancing(hornet),
@@ -214,7 +203,6 @@ KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration, int K,
         ERROR("Number of max iterations should be greater than zero")
 
     hd_katzdata().nV            = hornet.nV();
-    hd_katzdata().K             = K;
     hd_katzdata().max_degree    = max_degree;
     hd_katzdata().alpha         = 1.0 / (static_cast<double>(max_degree) + 1.0);
     hd_katzdata().max_iteration = max_iteration;
@@ -241,14 +229,14 @@ KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration, int K,
         host::copyToDevice(h_paths_ptr, max_iteration, hd_katzdata().num_paths);
     }
     gpu::allocate(hd_katzdata().KC,          nV);
-    gpu::allocate(hd_katzdata().lower_bound, nV);
-    gpu::allocate(hd_katzdata().upper_bound, nV);
+    // gpu::allocate(hd_katzdata().lower_bound, nV);
+    // gpu::allocate(hd_katzdata().upper_bound, nV);
 
     gpu::allocate(hd_katzdata().is_active,             nV);
-    gpu::allocate(hd_katzdata().vertex_array_sorted,   nV);
-    gpu::allocate(hd_katzdata().vertex_array_unsorted, nV);
-    gpu::allocate(hd_katzdata().lower_bound_sorted,    nV);
-    gpu::allocate(hd_katzdata().lower_bound_unsorted,  nV);
+    // gpu::allocate(hd_katzdata().vertex_array_sorted,   nV);
+    // gpu::allocate(hd_katzdata().vertex_array_unsorted, nV);
+    // gpu::allocate(hd_katzdata().lower_bound_sorted,    nV);
+    // gpu::allocate(hd_katzdata().lower_bound_unsorted,  nV);
 
     reset();
 }
@@ -278,12 +266,12 @@ void KATZCENTRALITY::release(){
     gpu::free(hd_katzdata().num_paths_data);
     gpu::free(hd_katzdata().num_paths);
     gpu::free(hd_katzdata().KC);
-    gpu::free(hd_katzdata().lower_bound);
-    gpu::free(hd_katzdata().upper_bound);
-    gpu::free(hd_katzdata().vertex_array_sorted);
-    gpu::free(hd_katzdata().vertex_array_unsorted);
-    gpu::free(hd_katzdata().lower_bound_sorted);
-    gpu::free(hd_katzdata().lower_bound_unsorted);
+    // gpu::free(hd_katzdata().lower_bound);
+    // gpu::free(hd_katzdata().upper_bound);
+    // gpu::free(hd_katzdata().vertex_array_sorted);
+    // gpu::free(hd_katzdata().vertex_array_unsorted);
+    // gpu::free(hd_katzdata().lower_bound_sorted);
+    // gpu::free(hd_katzdata().lower_bound_unsorted);
     host::free(h_paths_ptr);
 }
 
@@ -293,27 +281,24 @@ void KATZCENTRALITY::run() {
     forAllnumV(StaticAlgorithm<HornetGraph>::hornet, Init { hd_katzdata });
 
     hd_katzdata().iteration  = 1;
-    hd_katzdata().num_active = StaticAlgorithm<HornetGraph>::hornet.nV();
 
-    while (hd_katzdata().num_active > hd_katzdata().K &&
-           hd_katzdata().iteration < hd_katzdata().max_iteration) {
+
+    while (hd_katzdata().iteration <= hd_katzdata().max_iteration) {
+
 
         hd_katzdata().alphaI            = std::pow(hd_katzdata().alpha,
                                                    hd_katzdata().iteration);
-        hd_katzdata().lower_bound_const = std::pow(hd_katzdata().alpha,
-                                                  hd_katzdata().iteration + 1) /
-                                        (1.0 - hd_katzdata().alpha);
-        hd_katzdata().upper_bound_const = std::pow(hd_katzdata().alpha,
-                                                  hd_katzdata().iteration + 1) /
-                                        (1.0 - hd_katzdata().alpha *
-                                 static_cast<double>(hd_katzdata().max_degree));
+
         hd_katzdata().num_active = 0; // Each iteration the number of active
                                      // vertices is set to zero.
 
         forAllnumV (StaticAlgorithm<HornetGraph>::hornet, InitNumPathsPerIteration { hd_katzdata } );
         forAllEdges(StaticAlgorithm<HornetGraph>::hornet, UpdatePathCount          { hd_katzdata },
                     load_balancing);
-        forAllnumV (StaticAlgorithm<HornetGraph>::hornet, UpdateKatzAndBounds      { hd_katzdata } );
+        // forAllnumV (StaticAlgorithm<HornetGraph>::hornet, AddOwnCount { hd_katzdata } );
+
+        forAllnumV (StaticAlgorithm<HornetGraph>::hornet, UpdateKatz               { hd_katzdata } );
+
 
         hd_katzdata.sync();
 
@@ -331,23 +316,8 @@ void KATZCENTRALITY::run() {
         hd_katzdata().num_prev_active = hd_katzdata().num_active;
         hd_katzdata().num_active      = 0; // Resetting active vertices for
                                            // sorting
-
-        // Notice that the sorts the vertices in an incremental order based on
-        // the lower bounds.
-        // The algorithms requires the vertices to be sorted in an decremental
-        // fashion.
-        // As such, we use the num_prev_active variables to store the number of
-        // previous active vertices and are able to find the K-th from last
-        // vertex (which is essentially going from the tail of the array).
-        xlib::CubSortByKey<double, vert_t>::srun
-            (hd_katzdata().lower_bound_unsorted,
-             hd_katzdata().vertex_array_unsorted,
-             old_active_count, hd_katzdata().lower_bound_sorted,
-             hd_katzdata().vertex_array_sorted);
-
-        forAllnumV(StaticAlgorithm<HornetGraph>::hornet, CountActive { hd_katzdata } );
-        hd_katzdata.sync();
     }
+    hd_katzdata().iteration--;
 }
 
 template <typename HornetGraph>
@@ -355,52 +325,7 @@ void KATZCENTRALITY::copyKCToHost(double* d) {
     gpu::copyToHost(hd_katzdata().KC, StaticAlgorithm<HornetGraph>::hornet.nV(), d);
 }
 
-// This function should only be used directly within run() and is currently
-// commented out due to to large execution overheads.
-template <typename HornetGraph>
-void KATZCENTRALITY::printKMostImportant() {
-    ulong_t* num_paths_curr;
-    ulong_t* num_paths_prev;
-    int*     vertex_array;
-    int*     vertex_array_unsorted;
-    double*  KC;
-    double*  lower_bound;
-    double*  upper_bound;
 
-    auto nV = StaticAlgorithm<HornetGraph>::hornet.nV();
-    host::allocate(num_paths_curr, nV);
-    host::allocate(num_paths_prev, nV);
-    host::allocate(vertex_array,   nV);
-    host::allocate(vertex_array_unsorted, nV);
-    host::allocate(KC,          nV);
-    host::allocate(lower_bound, nV);
-    host::allocate(upper_bound, nV);
-
-    gpu::copyToHost(hd_katzdata().lower_bound, nV, lower_bound);
-    gpu::copyToHost(hd_katzdata().upper_bound, nV, upper_bound);
-    gpu::copyToHost(hd_katzdata().KC, nV, KC);
-    gpu::copyToHost(hd_katzdata().vertex_array_sorted, nV, vertex_array);
-    gpu::copyToHost(hd_katzdata().vertex_array_unsorted, nV,
-                    vertex_array_unsorted);
-
-    if (hd_katzdata().num_prev_active > hd_katzdata().K) {
-        for (int i = hd_katzdata().num_prev_active - 1;
-                i >= hd_katzdata().num_prev_active - hd_katzdata().K; i--) {
-            vert_t j = vertex_array[i];
-            std::cout << j << "\t\t" << KC[j] << "\t\t" << upper_bound[j]
-                      << upper_bound[j] - lower_bound[j] << "\n";
-        }
-    }
-    std::cout << std::endl;
-
-    host::free(num_paths_curr);
-    host::free(num_paths_prev);
-    host::free(vertex_array);
-    host::free(vertex_array_unsorted);
-    host::free(KC);
-    host::free(lower_bound);
-    host::free(upper_bound);
-}
 
 template <typename HornetGraph>
 int KATZCENTRALITY::get_iteration_count() {
