@@ -36,7 +36,7 @@
  *
  * @file
  */
-#include "Static/KatzCentrality/Katz.cuh"
+#include "Static/KatzCentrality/KatzApprox.cuh"
 #include <StandardAPI.hpp>
 #include <Device/Util/Timer.cuh>
 #include <Graph/GraphStd.hpp>
@@ -101,8 +101,8 @@ int main(int argc, char* argv[]) {
 #endif
 
       for(int i=0; i<10; i++){
-          ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityDynamicH>(argc, argv);
-          ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityStatic>(argc, argv);
+          ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzApproxCentralityDynamicH>(argc, argv);
+          ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzApproxCentralityStatic>(argc, argv);
         
       }
 
