@@ -40,6 +40,13 @@
 
 #include "HornetAlg.hpp"
 
+#include <cmath>
+#include <thrust/functional.h>
+#include <thrust/transform_reduce.h>
+#include <thrust/device_vector.h>
+#include <thrust/transform.h>
+#include <thrust/execution_policy.h>
+
 
 namespace hornets_nest {
 
@@ -64,11 +71,11 @@ struct KatzData {
     double alpha;
     double alphaI; // Alpha to the power of I  (being the iteration)
 
-
     int iteration;
     int max_iteration;
 
     int nV;
+    bool normalized;
 };
 
 // Label propogation is based on the values from the previous iteration.
@@ -76,7 +83,7 @@ template <typename HornetGraph>
 class KatzCentrality : public StaticAlgorithm<HornetGraph> {
 public:
     KatzCentrality(HornetGraph& hornet, int max_iteration,
-                   double alpha_ = 0.0, bool is_static = true);
+                   double alpha_ = 0.0, bool normalized = true, bool is_static = true);
     ~KatzCentrality();
 
     void reset()    override;
@@ -120,7 +127,7 @@ struct Init {
     OPERATOR(vert_t src) {
         kd().num_paths_prev[src] = 1;
         kd().num_paths_curr[src] = 0;
-        kd().KC[src]             = 0.0;
+        kd().KC[src]             = 0;
     }
 };
 
@@ -180,7 +187,7 @@ using length_t = int;
 
 template <typename HornetGraph>
 KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration, 
-                               double alpha_,  bool is_static) :
+                               double alpha_, bool normalized,  bool is_static) :
                                        StaticAlgorithm<HornetGraph>(hornet),
                                        load_balancing(hornet),
                                        is_static(is_static) {
@@ -202,6 +209,8 @@ KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration,
 
     hd_katzdata().nV            = hornet.nV();
     hd_katzdata().max_iteration = max_iteration;
+
+    hd_katzdata().normalized    = normalized;
 
     auto nV = hornet.nV();
 
@@ -299,6 +308,42 @@ void KATZCENTRALITY::run() {
         }
     }
     hd_katzdata().iteration--;
+
+    if(hd_katzdata().normalized==true){
+        double* d_normalizationArray = nullptr;
+        gpu::allocate(d_normalizationArray,StaticAlgorithm<HornetGraph>::hornet.nV());
+
+        thrust::transform(thrust::device,hd_katzdata().KC, 
+            hd_katzdata().KC+StaticAlgorithm<HornetGraph>::hornet.nV(),
+            hd_katzdata().KC, d_normalizationArray,thrust::multiplies<double>());    
+
+        double h_normFactor = thrust::reduce(thrust::device, d_normalizationArray, 
+                d_normalizationArray + StaticAlgorithm<HornetGraph>::hornet.nV(),0.0);
+
+        if(h_normFactor>0){
+            h_normFactor = 1.0/std::sqrt(h_normFactor);
+        }
+        else{
+            ERROR("In the normalization process the square sum of the values is 0. ")
+        }
+
+        thrust::transform(thrust::device, 
+                        hd_katzdata().KC, 
+                        hd_katzdata().KC+StaticAlgorithm<HornetGraph>::hornet.nV(),
+                        hd_katzdata().KC,
+                        [h_normFactor] __device__ (double kc)
+                        {
+                            return h_normFactor*kc;
+                        });
+
+
+        thrust::transform(thrust::device,hd_katzdata().KC, 
+            hd_katzdata().KC+StaticAlgorithm<HornetGraph>::hornet.nV(),
+            hd_katzdata().KC, d_normalizationArray,thrust::multiplies<double>());    
+
+        gpu::free(d_normalizationArray);
+    }
+
 }
 
 template <typename HornetGraph>
