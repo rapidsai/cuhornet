@@ -36,7 +36,7 @@
  *
  * @file
  */
-#include "Static/KatzCentrality/Katz.cuh"
+#include "Static/KatzCentrality/KatzTopK.cuh"
 #include <StandardAPI.hpp>
 #include <Device/Util/Timer.cuh>
 #include <Graph/GraphStd.hpp>
@@ -50,85 +50,45 @@ int exec(int argc, char* argv[]) {
     using namespace timer;
 
 	// Limit the number of iteartions for graphs with large number of vertices.
-    int max_iterations = 20;
+    int max_iterations = 50;
 
 	  cudaSetDevice(0);
     GraphStd<vert_t, vert_t> graph(UNDIRECTED);
-
-    HornetInit* hornet_init;
     
-    if(argc>1){
-      graph.read(argv[1], SORT | PRINT_INFO);
-      hornet_init = new HornetInit(graph.nV(), graph.nE(), graph.csr_out_offsets(), graph.csr_out_edges());
-    }else{
+    graph.read(argv[1], SORT | PRINT_INFO);
 
-      max_iterations=20;
-      const vert_t tempNV = 5;
-      const vert_t tempNE = 2*tempNV-2;
-      vert_t tempOff[tempNV+1];// = {0,1,3,5,6};
-      vert_t tempEdges[tempNE];// = {1,0,2,1,3,2};
+    HornetInit hornet_init(graph.nV(), graph.nE(), graph.csr_out_offsets(), graph.csr_out_edges());
 
-      tempOff[0]=0;
-      tempOff[1]=1;
-      tempOff[tempNV] = tempNE;
-      for(vert_t v=2; v<tempNV; v++)
-        tempOff[v]=tempOff[v-1]+2;
-      tempEdges[0]=1;
-      tempEdges[tempNE-1]=tempNV-2;
-      vert_t count=1;
-      for(vert_t v=1; v<(tempNV-1); v++){
-        printf("%d, ",count);
-        tempEdges[count++]=v-1;
-        tempEdges[count++]=v+1;
-      }
-
-      printf("\n");
-
-      hornet_init = new HornetInit(tempNV, tempNE, tempOff, tempEdges);
-    }
-
-
-    // HornetInit hornet_init(graph.nV(), graph.nE(), graph.csr_out_offsets(), graph.csr_out_edges());
-
-    HornetGraph hornet_graph(*hornet_init);
-     // Finding largest vertex degreemake
+    HornetGraph hornet_graph(hornet_init);
+ 	  // Users can add the number of TopK vertices for the approximation
+	  int topK = graph.nV();
+     if(argc>2)
+        topK=atoi(argv[2]);
+ 
+    // Finding largest vertex degreemake
     degree_t max_degree_vertex = hornet_graph.max_degree();
     std::cout << "Max degree vextex is " << max_degree_vertex << std::endl;
 
 
-    // Katz kcStatIc(hornet_graph, max_iterations, max_degree_vertex);
-    float alpha = 1.0/(max_degree_vertex+1.0); 
-    Katz kcStatIc(hornet_graph, max_iterations,alpha,true);
+    Katz kcPostUpdate(hornet_graph, max_iterations, topK, max_degree_vertex);
 
 
     Timer<DEVICE> TM;
     TM.start();
 
-    kcStatIc.run();
+    kcPostUpdate.run();
 
     TM.stop();
 
-    double* h_kcArray = new double[hornet_graph.nV()];
-
-    kcStatIc.copyKCToHost(h_kcArray);
-
-    // for (int v=0; v<hornet_graph.nV(); v++){
-    //   printf("%lf, ", h_kcArray[v]);
-    // }
-    // printf("\n");
-
     auto total_time = TM.duration();
     std::cout << "The number of iterations     : "
-              << kcStatIc.get_iteration_count()
+              << kcPostUpdate.get_iteration_count()
+              << "\nTopK                       : " << topK 
               << "\nTotal time for KC          : " << total_time
               << "\nAverage time per iteartion : "
               << total_time /
-                 static_cast<float>(kcStatIc.get_iteration_count())
+                 static_cast<float>(kcPostUpdate.get_iteration_count())
               << "\n";
-
-
-    delete[] h_kcArray;
-    delete hornet_init;
 
     return 0;
 }
@@ -140,10 +100,10 @@ int main(int argc, char* argv[]) {
     {//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
 #endif
 
-      for(int i=0; i<1; i++){
-          // ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityDynamicH>(argc, argv);
-          ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityStatic>(argc, argv);
-
+      for(int i=0; i<10; i++){
+          ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityTopKDynamicH>(argc, argv);
+          ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityTopKStatic>(argc, argv);
+        
       }
 
 #if defined(RMM_WRAPPER)
