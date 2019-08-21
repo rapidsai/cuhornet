@@ -42,7 +42,7 @@
 #include <Device/Util/SafeCudaAPIAsync.cuh>
 #include <Device/Primitives/CubWrapper.cuh>
 #if defined(RMM_WRAPPER)
-#include <rmm.h>
+#include <rmm/rmm.h>
 #endif
 #include <omp.h>
 #include <cstring>
