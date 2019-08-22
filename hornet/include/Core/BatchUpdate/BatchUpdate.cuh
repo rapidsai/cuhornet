@@ -50,7 +50,7 @@
 #include "BatchUpdateKernels.cuh"
 #include "../Static/Static.cuh"
 
-#define CUDA_TRY( call ) 									                            \
+#define CUDA_TRY_CALL( call ) 									                            \
 {                                                                     \
     cudaError_t cudaStatus = call;                                    \
     if ( cudaSuccess != cudaStatus )                                  \
@@ -63,7 +63,7 @@
     }												                                          \
 }
 
-#define CUDA_CHECK_LAST() CUDA_TRY(cudaPeekAtLastError())
+#define PEEK_LAST_STATUS() CUDA_TRY_CALL(cudaPeekAtLastError())
 
 
 namespace hornet {
