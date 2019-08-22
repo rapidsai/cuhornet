@@ -782,7 +782,7 @@ move_adjacency_lists(
             h_new_v_data, DeviceType::HOST,
             d_new_v_data, DeviceType::DEVICE,
             reallocated_vertices_count);
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
 
     //Get offsets for binarySearchLB kernel
     duplicate_flag.resize(reallocated_vertices_count + 1);
@@ -790,7 +790,7 @@ move_adjacency_lists(
     //        d_realloc_v_data. template get<0>(), DeviceType::DEVICE,
     //        duplicate_flag.data().get(), DeviceType::DEVICE,
     //        reallocated_vertices_count);
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
     if (is_insert) {
     cub_prefixsum.run(d_realloc_v_data. template get<0>(),
             duplicate_flag.size(),
@@ -800,7 +800,7 @@ move_adjacency_lists(
             duplicate_flag.size(),
             duplicate_flag.data().get());
     }
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
     degree_t total_work = duplicate_flag[duplicate_flag.size() - 1];
     if (total_work != 0)  {
       const int BLOCK_SIZE = 256;
@@ -813,7 +813,7 @@ move_adjacency_lists(
                   d_new_v_data,
                   duplicate_flag.data().get(),
                   duplicate_flag.size());
-      CUDA_CHECK_LAST()
+      PEEK_LAST_STATUS()
     }
     if (reallocated_vertices_count != 0) {
       const int BLOCK_SIZE = 256;
@@ -824,7 +824,7 @@ move_adjacency_lists(
                   vertex_access_ptr,
                   d_new_v_data,
                   reallocated_vertices_count);
-      CUDA_CHECK_LAST()
+      PEEK_LAST_STATUS()
     }
 }
 
