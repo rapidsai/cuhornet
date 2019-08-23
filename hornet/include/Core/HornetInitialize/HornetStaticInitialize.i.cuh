@@ -10,20 +10,21 @@ int HORNETSTATIC::_instance_count = 0;
 template <typename... VertexMetaTypes, typename... EdgeMetaTypes,
     typename vid_t, typename degree_t>
 HORNETSTATIC::
-HornetStatic(HORNETSTATIC::HInitT& h_init) noexcept :
+HornetStatic(HORNETSTATIC::HInitT& h_init, DeviceType h_init_type) noexcept :
     _nV(h_init.nV()),
     _nE(h_init.nE()),
     _id(_instance_count++),
     _vertex_data(h_init.nV()),
     _edge_data(xlib::upper_approx<512>(h_init.nE())) {
-    initialize(h_init);
+    initialize(h_init, h_init_type);
 }
 
 template <typename... VertexMetaTypes, typename... EdgeMetaTypes,
     typename vid_t, typename degree_t>
 void
 HORNETSTATIC::
-initialize(HORNETSTATIC::HInitT& h_init) noexcept {
+initialize(HORNETSTATIC::HInitT& h_init, DeviceType h_init_type) noexcept {
+  if (h_init_type == DeviceType::HOST) {
     SoAData<VertexTypes, DeviceType::HOST> vertex_data(h_init.nV());
     auto e_d = vertex_data.get_soa_ptr();
 
@@ -41,6 +42,25 @@ initialize(HORNETSTATIC::HInitT& h_init) noexcept {
     }
     _vertex_data.template copy(vertex_data);
     _edge_data.copy(h_init.edge_data_ptr(), DeviceType::HOST, h_init.nE());
+  } else {
+
+    xlib::byte_t * edge_block_ptr =
+        reinterpret_cast<xlib::byte_t *>(_edge_data.get_soa_ptr().template get<0>());
+    auto num_items = _edge_data.get_num_items();
+
+    auto degreePtr  = thrust::device_pointer_cast(_vertex_data.get_soa_ptr().template get<0>());
+    auto blockPtr   = thrust::device_pointer_cast(_vertex_data.get_soa_ptr().template get<1>());
+    auto offsetPtr  = thrust::device_pointer_cast(_vertex_data.get_soa_ptr().template get<2>());
+    auto numItemPtr = thrust::device_pointer_cast(_vertex_data.get_soa_ptr().template get<3>());
+
+    auto initOffset = thrust::device_pointer_cast(h_init.csr_offsets());
+    thrust::transform(initOffset + 1, initOffset + 1 + h_init.nV(), initOffset, degreePtr, thrust::minus<degree_t>());
+    thrust::fill(blockPtr, blockPtr + h_init.nV(), edge_block_ptr);
+    thrust::copy(initOffset, initOffset + h_init.nV(), offsetPtr);
+    thrust::fill(numItemPtr, numItemPtr + h_init.nV(), num_items);
+
+    _edge_data.copy(h_init.edge_data_ptr(), DeviceType::DEVICE, h_init.nE());
+  }
 }
 
 template <typename... VertexMetaTypes, typename... EdgeMetaTypes,
