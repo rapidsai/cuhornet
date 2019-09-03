@@ -283,7 +283,12 @@ typename std::enable_if<std::is_pointer<T>::value>::type
 cuFreeAux(const char* file, int line, const char* func_name, T& ptr)  noexcept {
     using R    = typename xlib::remove_const_ptr<T>::type;
     auto& ptr1 = const_cast<R&>(ptr);
+#if defined(RMM_WRAPPER)
+    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
+#else
     cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line, func_name);
+#endif
     ptr1 = nullptr;
 }
 
@@ -293,7 +298,12 @@ cuFreeAux(const char* file, int line, const char* func_name,
           T& ptr, TArgs*... ptrs) noexcept {
     using R    = typename xlib::remove_const_ptr<T>::type;
     auto& ptr1 = const_cast<R&>(ptr);
+#if defined(RMM_WRAPPER)
+    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
+#else
     cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line, func_name);
+#endif
     ptr1 = nullptr;
     cuFreeAux(file, line, func_name, ptrs...);
 }
@@ -304,7 +314,12 @@ void cuFreeAux(const char* file, int line, const char* func_name,
     using R = typename std::remove_cv<T*>::type;
     for (int i = 0; i < SIZE; i++) {
         auto ptr1 = const_cast<R>(ptr[i]);
+#if defined(RMM_WRAPPER)
+    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
+#else
         cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line,  func_name);
+#endif
     }
 }
 
@@ -312,7 +327,12 @@ template<typename T, int SIZE>
 void cuFreeAux(const char* file, int line, const char* func_name,
                T* (&ptr)[SIZE]) noexcept {
     for (int i = 0; i < SIZE; i++) {
+#if defined(RMM_WRAPPER)
+    auto result = RMM_FREE(ptr[i], 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
+#else
         cudaErrorHandler(cudaFree(ptr[i]), "cudaFree", file, line,  func_name);
+#endif
         ptr[i] = nullptr;
     }
 }

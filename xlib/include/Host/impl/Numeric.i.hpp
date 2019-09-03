@@ -86,16 +86,19 @@ void check_overflow(T value) {
 
 //------------------------------------------------------------------------------
 template<typename T>
+HOST_DEVICE
 constexpr T min(const T& a) noexcept {
     return a;
 }
 
 template<typename T>
+HOST_DEVICE
 constexpr T min(const T& a, const T& b) noexcept {
     return a < b ? a : b;
 }
 
 template<typename T, typename... TArgs>
+HOST_DEVICE
 constexpr T min(const T& a, const T& b, const TArgs&... args) noexcept {
     const auto& min_args = xlib::min(args...);
     const auto& min_value = xlib::min(a, b);

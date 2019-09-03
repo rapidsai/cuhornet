@@ -38,17 +38,32 @@
  */
 #pragma once
 
-#include "HornetAlg.hpp"
+#include <HornetAlg.hpp>
 
 #include <cmath>
 #include <thrust/functional.h>
 #include <thrust/transform_reduce.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
+#include <thrust/inner_product.h>
 #include <thrust/execution_policy.h>
 
 
 namespace hornets_nest {
+
+namespace katz_detail {
+
+struct Scale : public thrust::unary_function<double, double> {
+  double scale;
+
+  Scale(double scale_) : scale(scale_) {}
+
+  __host__ __device__ double operator()(const double &x) {
+    return x*scale;
+  }
+};
+
+}
 
 // using vert_t = int;
 using HornetInit  = ::hornet::HornetInit<vert_t>;
@@ -82,8 +97,13 @@ struct KatzData {
 template <typename HornetGraph>
 class KatzCentrality : public StaticAlgorithm<HornetGraph> {
 public:
-    KatzCentrality(HornetGraph& hornet, int max_iteration,
-                   double alpha_ = 0.0, bool normalized = true, bool is_static = true);
+    KatzCentrality(HornetGraph& hornet,
+                   double alpha_ = 0.1,
+                   int max_iteration = 100,
+                   double tolerance = 1e-5,
+                   bool normalized = true,
+                   bool is_static = true,
+                   double * kc_out = nullptr);
     ~KatzCentrality();
 
     void reset()    override;
@@ -104,6 +124,9 @@ private:
     HostDeviceVar<KatzData>     hd_katzdata;
     ulong_t**                   h_paths_ptr;
     bool                        is_static;
+
+    double tol;
+    double * kc_out_ptr;
 
 };
 
@@ -165,6 +188,17 @@ struct UpdateKatz {
     }
 };
 
+struct Saxpy {
+  double alphaI;
+
+  Saxpy(double alphaI_) : alphaI(alphaI_) {}
+
+  __host__ __device__
+    double operator()(const ulong_t& path, const double& katz) {
+      return path*alphaI + katz;
+    }
+};
+
 
 
 //------------------------------------------------------------------------------
@@ -182,28 +216,32 @@ struct UpdateKatz {
 
 using length_t = int;
 
-// Constructor. User needs to define maximal number of iterations that algoritm 
+// Constructor. User needs to define maximal number of iterations that algorithm
 // should be executed.
 
 template <typename HornetGraph>
-KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration, 
-                               double alpha_, bool normalized,  bool is_static) :
-                                       StaticAlgorithm<HornetGraph>(hornet),
-                                       load_balancing(hornet),
-                                       is_static(is_static) {
+KATZCENTRALITY::KatzCentrality(HornetGraph& hornet,
+                               double alpha_,
+                               int max_iteration,
+                               double tolerance,
+                               bool normalized,
+                               bool is_static,
+                               double * kc_out) :
+                                 StaticAlgorithm<HornetGraph>(hornet),
+                                 load_balancing(hornet),
+                                 is_static(is_static) {
     if (max_iteration <= 0)
         ERROR("Number of max iterations should be greater than zero")
 
+    tol = tolerance;
+
     // All alpha values need to be smaller than this value to ensure convergene/
-    double minimalAlpha = 1.0 / (static_cast<double>(hornet.max_degree())); 
+    double minimalAlpha = 1.0 / (static_cast<double>(hornet.max_degree()));
 
     // If default alpha value was not set by user, then set default value
-    if(alpha_==0.0){
+    if(minimalAlpha<alpha_){
         hd_katzdata().alpha = 1.0 / (static_cast<double>(hornet.max_degree()+1));
-    }
-    else if(minimalAlpha<alpha_)
-        ERROR("ALPHA needs to be smaller than 1.0/(max{verte_size}+1.0)")
-    else{
+    } else{
         hd_katzdata().alpha         = alpha_;
     }
 
@@ -241,7 +279,12 @@ KATZCENTRALITY::KatzCentrality(HornetGraph& hornet, int max_iteration,
         hd_katzdata().num_paths_curr = h_paths_ptr[1];
         host::copyToDevice(h_paths_ptr, max_iteration, hd_katzdata().num_paths);
     }
-    gpu::allocate(hd_katzdata().KC,          nV);
+    if (kc_out == nullptr) {
+      gpu::allocate(hd_katzdata().KC,          nV);
+    } else {
+      hd_katzdata().KC = kc_out;
+    }
+    kc_out_ptr = kc_out;
 
     reset();
 }
@@ -273,8 +316,8 @@ template <typename HornetGraph>
 void KATZCENTRALITY::release(){
     gpu::free(hd_katzdata().num_paths_data);
     gpu::free(hd_katzdata().num_paths);
-    gpu::free(hd_katzdata().KC);
     host::free(h_paths_ptr);
+    if (kc_out_ptr == nullptr) { gpu::free(hd_katzdata().KC); }
 }
 
 
@@ -284,20 +327,28 @@ void KATZCENTRALITY::run() {
     // (Each vertex has a path to itself). This is equivalent to iteration 0.
     forAllnumV(StaticAlgorithm<HornetGraph>::hornet, Init { hd_katzdata });
 
-
     // Update Kataz Centrality scores for the given number of iterations
     hd_katzdata().iteration  = 1;
     while (hd_katzdata().iteration <= hd_katzdata().max_iteration) {
         // Alpha^I is computed at the beginning of every iteration.
         hd_katzdata().alphaI            = std::pow(hd_katzdata().alpha,hd_katzdata().iteration);
-
         forAllnumV (StaticAlgorithm<HornetGraph>::hornet, InitNumPathsPerIteration { hd_katzdata } );
-        forAllEdges(StaticAlgorithm<HornetGraph>::hornet, UpdatePathCount          { hd_katzdata },
-                    load_balancing);
-
+        forAllEdges(StaticAlgorithm<HornetGraph>::hornet, UpdatePathCount          { hd_katzdata }, load_balancing);
         forAllnumV (StaticAlgorithm<HornetGraph>::hornet, UpdateKatz               { hd_katzdata } );
 
         hd_katzdata().iteration++;
+
+        double err = 0;
+        {
+          auto curr_path = thrust::device_pointer_cast(hd_katzdata().num_paths_curr);
+          err = thrust::transform_reduce(
+              curr_path,
+              curr_path + StaticAlgorithm<HornetGraph>::hornet.nV(),
+              katz_detail::Scale(hd_katzdata().alphaI),
+              err,
+              thrust::plus<double>());
+        }
+
         if(is_static) {
             std::swap(hd_katzdata().num_paths_curr,hd_katzdata().num_paths_prev);
         }
@@ -306,29 +357,25 @@ void KATZCENTRALITY::run() {
             hd_katzdata().num_paths_prev = h_paths_ptr[iter - 1];
             hd_katzdata().num_paths_curr = h_paths_ptr[iter - 0];
         }
+        if (err < tol) { break; }
+
     }
     hd_katzdata().iteration--;
 
-    if(hd_katzdata().normalized==true){
-        double* d_normalizationArray = nullptr;
-        gpu::allocate(d_normalizationArray,StaticAlgorithm<HornetGraph>::hornet.nV());
+    if(hd_katzdata().normalized == true){
 
-        thrust::transform(thrust::device,hd_katzdata().KC, 
-            hd_katzdata().KC+StaticAlgorithm<HornetGraph>::hornet.nV(),
-            hd_katzdata().KC, d_normalizationArray,thrust::multiplies<double>());    
-
-        double h_normFactor = thrust::reduce(thrust::device, d_normalizationArray, 
-                d_normalizationArray + StaticAlgorithm<HornetGraph>::hornet.nV(),0.0);
+        double h_normFactor = thrust::inner_product(thrust::device,
+            hd_katzdata().KC, hd_katzdata().KC + StaticAlgorithm<HornetGraph>::hornet.nV(),
+            hd_katzdata().KC,
+            static_cast<double>(0),
+            thrust::plus<double>(),
+            thrust::multiplies<double>());
 
         if(h_normFactor>0){
             h_normFactor = 1.0/std::sqrt(h_normFactor);
-        }
-        else{
-            ERROR("In the normalization process the square sum of the values is 0. ")
-        }
 
-        thrust::transform(thrust::device, 
-                        hd_katzdata().KC, 
+        thrust::transform(thrust::device,
+                        hd_katzdata().KC,
                         hd_katzdata().KC+StaticAlgorithm<HornetGraph>::hornet.nV(),
                         hd_katzdata().KC,
                         [h_normFactor] __device__ (double kc)
@@ -336,12 +383,8 @@ void KATZCENTRALITY::run() {
                             return h_normFactor*kc;
                         });
 
+        }
 
-        thrust::transform(thrust::device,hd_katzdata().KC, 
-            hd_katzdata().KC+StaticAlgorithm<HornetGraph>::hornet.nV(),
-            hd_katzdata().KC, d_normalizationArray,thrust::multiplies<double>());    
-
-        gpu::free(d_normalizationArray);
     }
 
 }
