@@ -65,7 +65,6 @@ void BinarySearch::apply(HornetClass& hornet,
     prefixsum.resize(num_vertices + 1);
     int ITEMS_PER_BLOCK = xlib::DeviceProperty
                           ::smem_per_block<vid_t>(BLOCK_SIZE);
-    const auto DYN_SMEM_SIZE = ITEMS_PER_BLOCK * sizeof(vid_t);
     //assert(num_vertices < _work_size && "BinarySearch (work queue) too small");
 
     if (d_input != nullptr) {
@@ -85,16 +84,15 @@ void BinarySearch::apply(HornetClass& hornet,
     int total_work;
     cuMemcpyToHost(d_work.data().get() + num_vertices, total_work);
     unsigned grid_size = xlib::ceil_div(total_work, ITEMS_PER_BLOCK);
-
     if (total_work == 0)
         return;
     if (d_input != nullptr) {
     kernel::binarySearchKernel<BLOCK_SIZE>
-        <<< grid_size, BLOCK_SIZE, DYN_SMEM_SIZE >>>
+        <<< grid_size, BLOCK_SIZE >>>
         (hornet.device(), d_input, d_work.data().get(), num_vertices + 1, op);
     } else {
     kernel::binarySearchKernel<BLOCK_SIZE>
-        <<< grid_size, BLOCK_SIZE, DYN_SMEM_SIZE >>>
+        <<< grid_size, BLOCK_SIZE >>>
         (hornet.device(), d_work.data().get(), num_vertices + 1, op);
     }
     CHECK_CUDA_ERROR
