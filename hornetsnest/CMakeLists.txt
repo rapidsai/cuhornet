@@ -11,7 +11,7 @@ include(../compiler-util/CMakeLists.txt)
 # - include paths ---------------------------------------------------------------------------------
 
 include_directories(../hornet/include)
-include_directories(include)
+include_directories(include "${RMM_INCLUDE}")
 include_directories(../primitives)
 include_directories(${PROJECT_SOURCE_DIR}/src/Static/BetweennessCentrality)
 
@@ -36,6 +36,8 @@ file(GLOB_RECURSE X_SRCS        ${PROJECT_SOURCE_DIR}/../xlib/src/*)
 file(GLOB_RECURSE H_SRCS        ${PROJECT_SOURCE_DIR}/../hornet/src/*)
 
 add_library(hornetAlg ${X_SRCS} ${H_SRCS} ${DUMMY} ${BFS_SRCS} ${BC_SRCS} ${BC_SRCS2} ${BC_SRCS3} ${BUBFS_SRC} ${CC_SRCS} ${CLCOEFF_SRCS} ${SSSP_SRCS} ${SPMV_SRCS} ${PR_SRCS} ${KCORE_SRCS} ${TRI2_SRCS})
+
+target_link_libraries(hornetAlg ${RMM_LIBRARY})
 
 ###################################################################################################
 # - add executables -------------------------------------------------------------------------------

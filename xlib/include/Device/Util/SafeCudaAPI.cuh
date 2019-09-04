@@ -61,9 +61,7 @@
 #include <cassert>           //assert
 #include <cuda_runtime.h>    //cudaError_t
 #include <utility>           //std::forward
-#if defined(RMM_WRAPPER)
 #include <rmm/rmm.h>
-#endif
 
 #if defined(NEVER_DEFINED)
     #include "SafeFunctions_.cuh"
@@ -176,7 +174,6 @@ void cuGetSymbolAddressAux(const char* file, int line, const char* func_name,
 //  cuMalloc  //
 ////////////////
 
-#if defined(RMM_WRAPPER)
 //it may be better to move this inside a cpp file (similar to xlib::detail::cudaErrorHandler) if there is an appropriate place.
 #define RMM_ERROR_HANDLER(caller_name, callee_name, result) do {                                                   \
     std::cerr << xlib::Color::FG_RED << "\nRMM error\n" << xlib::Color::FG_DEFAULT          \
@@ -191,21 +188,15 @@ void cuGetSymbolAddressAux(const char* file, int line, const char* func_name,
     std::atexit(reinterpret_cast<void(*)()>(cudaDeviceReset));                              \
     std::exit(EXIT_FAILURE);                                                                \
 } while (0)
-#endif
 
 template<typename T>
 void cuMallocAux(const char* file, int line, const char* func_name,
                  T*& ptr, size_t num_items) noexcept {
     assert(num_items > 0);
-#if defined(RMM_WRAPPER)
     auto result = RMM_ALLOC(&ptr, num_items * sizeof(T), 0);//by default, use the default stream
     if (result != RMM_SUCCESS) {
         RMM_ERROR_HANDLER("cuMalloc", "rmmAlloc", result);
     }
-#else
-    cudaErrorHandler(cudaMalloc(&ptr, num_items * sizeof(T)), "cudaMalloc",
-                     file, line, func_name);
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -281,30 +272,26 @@ void cuMallocHostAux(const char* file, int line, const char* func_name,
 template<typename T>
 typename std::enable_if<std::is_pointer<T>::value>::type
 cuFreeAux(const char* file, int line, const char* func_name, T& ptr)  noexcept {
+    if (ptr != nullptr) {
     using R    = typename xlib::remove_const_ptr<T>::type;
     auto& ptr1 = const_cast<R&>(ptr);
-#if defined(RMM_WRAPPER)
     auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
     if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-#else
-    cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line, func_name);
-#endif
     ptr1 = nullptr;
+    }
 }
 
 template<typename T, typename... TArgs>
 typename std::enable_if<std::is_pointer<T>::value>::type
 cuFreeAux(const char* file, int line, const char* func_name,
           T& ptr, TArgs*... ptrs) noexcept {
+    if (ptr != nullptr) {
     using R    = typename xlib::remove_const_ptr<T>::type;
     auto& ptr1 = const_cast<R&>(ptr);
-#if defined(RMM_WRAPPER)
     auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
     if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-#else
-    cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line, func_name);
-#endif
     ptr1 = nullptr;
+    }
     cuFreeAux(file, line, func_name, ptrs...);
 }
 
@@ -314,12 +301,8 @@ void cuFreeAux(const char* file, int line, const char* func_name,
     using R = typename std::remove_cv<T*>::type;
     for (int i = 0; i < SIZE; i++) {
         auto ptr1 = const_cast<R>(ptr[i]);
-#if defined(RMM_WRAPPER)
     auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
     if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-#else
-        cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line,  func_name);
-#endif
     }
 }
 
@@ -327,12 +310,8 @@ template<typename T, int SIZE>
 void cuFreeAux(const char* file, int line, const char* func_name,
                T* (&ptr)[SIZE]) noexcept {
     for (int i = 0; i < SIZE; i++) {
-#if defined(RMM_WRAPPER)
     auto result = RMM_FREE(ptr[i], 0);//by default, use the default stream
     if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-#else
-        cudaErrorHandler(cudaFree(ptr[i]), "cudaFree", file, line,  func_name);
-#endif
         ptr[i] = nullptr;
     }
 }

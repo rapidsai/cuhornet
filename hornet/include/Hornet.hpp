@@ -1,7 +1,6 @@
 #ifndef HORNET_HPP
 #define HORNET_HPP
 
-//#define RMM_WRAPPER
 #include "Core/Hornet.cuh"
 #include "Core/Static/HornetStatic.cuh"
 #include "Core/Conf/Common.cuh"
