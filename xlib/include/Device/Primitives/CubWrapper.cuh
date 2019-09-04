@@ -56,13 +56,12 @@ namespace xlib {
 
 class CubWrapper {
 protected:
+    void initialize(const int num_items) noexcept { _num_items = num_items; }
+    void release(void) noexcept { cuFree(_d_temp_storage); _num_items = 0; }
+
     explicit CubWrapper() = default;
-    explicit CubWrapper(const int num_items) noexcept;
-    ~CubWrapper() noexcept;
-
-    void initialize(const int num_items) noexcept;
-
-    void release(void) noexcept;
+    explicit CubWrapper(const int num_items) noexcept : _num_items(num_items) {}
+    ~CubWrapper() noexcept { release(); }
 
     byte_t*  _d_temp_storage     { nullptr };
     size_t _temp_storage_bytes { 0 };
@@ -415,21 +414,6 @@ private:
 } // namespace xlib
 
 namespace xlib {
-
-CubWrapper::CubWrapper(const int num_items) noexcept : _num_items(num_items) {}
-
-void CubWrapper::initialize(const int num_items) noexcept {
-    _num_items = num_items;
-}
-
-void CubWrapper::release(void) noexcept {
-    cuFree(_d_temp_storage);
-    _num_items = 0;
-}
-
-CubWrapper::~CubWrapper() noexcept {
-    release();
-}
 
 //==============================================================================
 //==============================================================================
