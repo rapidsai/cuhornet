@@ -41,16 +41,13 @@
 #include <Device/Util/SafeCudaAPI.cuh>
 #include <Device/Util/SafeCudaAPIAsync.cuh>
 #include <Device/Primitives/CubWrapper.cuh>
-#if defined(RMM_WRAPPER)
 #include <rmm/rmm.h>
-#endif
 #include <omp.h>
 #include <cstring>
 
 namespace hornets_nest {
 namespace gpu {
 
-#if defined(RMM_WRAPPER)
 //it may be better to move this inside a cpp file (similar to xlib::detail::cudaErrorHandler) if there is an appropriate place.
 #define RMM_ERROR_HANDLER(caller_name, callee_name, result) do {                                                   \
     std::cerr << xlib::Color::FG_RED << "\nRMM error\n" << xlib::Color::FG_DEFAULT          \
@@ -82,42 +79,29 @@ void finalizeRMMPoolAllocation(void) {
         RMM_ERROR_HANDLER("hornets_nest::gpu::finalizeRMMPoolAllocation", "rmmFinalize", result);
     }
 }
-#endif
 
 template<typename T>
 void allocate(T*& pointer, size_t num_items) {
-#if defined(RMM_WRAPPER)
     auto result = RMM_ALLOC(&pointer, num_items * sizeof(T), 0);//by default, use the default stream
     if (result != RMM_SUCCESS) {
         RMM_ERROR_HANDLER("hornets_nest::gpu::allocate", "rmmAlloc", result);
     }
-#else
-    cuMalloc(pointer, num_items);
-#endif
 }
 
 template<typename T>
 typename std::enable_if<std::is_pointer<T>::value>::type
 free(T& pointer) {
-#if defined(RMM_WRAPPER)
     auto result = RMM_FREE(pointer, 0);//by default, use the default stream
     if (result != RMM_SUCCESS) {
         RMM_ERROR_HANDLER("hornets_nest::gpu::free", "rmmFree", result);
     }
-#else
-    cuFree(pointer);
-#endif
 }
 
 template<typename T, typename... TArgs>
 typename std::enable_if<std::is_pointer<T>::value>::type
 free(T& pointer, TArgs*... pointers) {
-#if defined(RMM_WRAPPER)
     hornets_nest::gpu::free(pointer);
     hornets_nest::gpu::free(pointers...);
-#else
-    cuFree(pointer, pointers...);
-#endif
 }
 
 template<typename T>
