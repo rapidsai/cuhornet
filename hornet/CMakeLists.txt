@@ -8,15 +8,10 @@ include(../compiler-util/CMakeLists.txt)
 ###################################################################################################
 # - include paths ---------------------------------------------------------------------------------
 
-include_directories(include)
+include_directories(include "${RMM_INCLUDE}")
 
 ###################################################################################################
 # - library targets -------------------------------------------------------------------------------
-
-if(RMM_LIBRARY)
-    add_library(rmm SHARED IMPORTED)
-    set_target_properties(rmm PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/../externals/rmm/build/librmm.so)
-endif()
 
 file(GLOB_RECURSE CPP_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE CU_SRCS  ${PROJECT_SOURCE_DIR}/src/*.cu)
@@ -28,9 +23,7 @@ add_library(hornet ${CPP_SRCS} ${CU_SRCS} ${SCPP_SRCS} ${SCU_SRCS})
 ###################################################################################################
 # - link libraries --------------------------------------------------------------------------------
 
-if(RMM_LIBRARY)
-target_link_libraries(hornet rmm)
-endif()
+target_link_libraries(hornet ${RMM_LIBRARY})
 if(USE_NVTX)
 target_link_libraries(hornet ${NVTX_LIBRARIES})
 endif()
@@ -42,15 +35,11 @@ add_executable(hornet_mgpu_insert_test            test/HornetMultiGPUInsertTest.
 add_executable(hornet_insert_weighted_test        test/HornetInsertTestWeighted.cu)
 add_executable(hornet_insert_test                 test/HornetInsertTest.cu)
 add_executable(hornet_delete_test                 test/HornetDeleteTest.cu)
-if(RMM_LIBRARY)
-add_executable(rmm_benchmark      test/RMMBenchmark.cu)
-endif()
+add_executable(rmm_benchmark                      test/RMMBenchmark.cu)
 
 target_link_libraries(hornet_mgpu_insert_test           hornet)
 target_link_libraries(hornet_insert_weighted_test       hornet)
 target_link_libraries(hornet_insert_test                hornet)
 target_link_libraries(hornet_delete_test                hornet)
-if(RMM_LIBRARY)
-target_link_libraries(rmm_benchmark      hornet)
-endif()
+target_link_libraries(rmm_benchmark                     hornet)
 

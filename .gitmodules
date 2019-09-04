@@ -1,3 +1,0 @@
-[submodule "thirdparty/rmm"]
-	path = externals/rmm
-	url = git@github.com:rapidsai/rmm.git

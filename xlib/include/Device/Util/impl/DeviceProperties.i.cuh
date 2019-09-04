@@ -249,18 +249,22 @@ int DeviceProperty::smem_per_warp(int block_size) noexcept {
            (block_size / xlib::WARP_SIZE);
 }
 
-template<typename T>
+template <typename T>
 int DeviceProperty::smem_per_block(int block_size) noexcept {
-    assert(block_size >= 0 && block_size < MAX_BLOCK_SIZE &&
-           "BLOCK_SIZE range");
+  int dev_mjr;
+  cudaDeviceGetAttribute ( &dev_mjr, cudaDevAttrComputeCapabilityMajor, 0);
+  int smem_sm;
+  cudaDeviceGetAttribute ( &smem_sm, cudaDevAttrMaxSharedMemoryPerMultiprocessor, 0);
+  int smem_bl;
+  cudaDeviceGetAttribute ( &smem_bl, cudaDevAttrMaxSharedMemoryPerBlock, 0);
+  int thrd_sm;
+  cudaDeviceGetAttribute ( &thrd_sm, cudaDevAttrMaxThreadsPerMultiProcessor, 0);
 
-    int max_blocks     = DeviceProperty::resident_blocks_per_SM();
-    int SM_smem        = DeviceProperty::smem_per_SM();
-    int num_blocks     = xlib::THREADS_PER_SM / block_size;
-    int actual_blocks  = std::min(max_blocks, num_blocks);
-    int smem_per_block = std::min(SM_smem / actual_blocks,
-                                   static_cast<int>(MAX_BLOCK_SMEM));
-    return smem_per_block / sizeof(T);
+  int max_blocks = (dev_mjr >= 5) ? 32 : 16;
+  int num_blocks = thrd_sm/block_size;
+  int actual_blocks = std::min(max_blocks, num_blocks);
+  int smem_per_block = std::min(smem_sm / actual_blocks, smem_bl);
+  return smem_per_block/sizeof(T);
 }
 
 //------------------------------------------------------------------------------

@@ -2,7 +2,6 @@
 # - set build options -----------------------------------------------------------------------------
 
 set(CUB_LIBRARY ON) # if set to off, some test cases using CUB will not compile.
-set(RMM_LIBRARY OFF) # if set to ON, gpu::allocate invokes RMM_ALLOC, if set to OFF, gpu::allocate invokes cuMalloc (which in turn, invokes cudaMalloc)
 
 ###################################################################################################
 # - cmake modules ---------------------------------------------------------------------------------
@@ -25,9 +24,9 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # if on, save output of compile commands to compile_command.json
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
+#set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_60,code=sm_60")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_70,code=sm_70")
@@ -36,9 +35,9 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-
 
 # set warnings as errors
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wno-reorder")
 endif(CMAKE_COMPILER_IS_GNUCXX)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Werror cross-execution-space-call -Xcompiler -Wall,-Werror")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Werror cross-execution-space-call -Xcompiler -Wall,-Werror,-Wno-reorder")
 
 # set default build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -49,12 +48,6 @@ if(CUB_LIBRARY)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCUB_WRAPPER")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUB_WRAPPER")
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DCUB_WRAPPER")
-endif()
-
-if(RMM_LIBRARY)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DRMM_WRAPPER")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DRMM_WRAPPER")
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DRMM_WRAPPER")
 endif()
 
 ###################################################################################################
@@ -79,11 +72,27 @@ if(CUB_LIBRARY)
     include_directories(../externals/cub-1.8.0)
 endif()
 
-if(RMM_LIBRARY)
-    include_directories(../externals/rmm/include)
-    include_directories(../externals/rmm/src)
-    include_directories(../externals/rmm/thirdparty/cnmem/include)
-endif()
+###################################################################################################
+# - RMM -------------------------------------------------------------------------------------------
+
+find_path(RMM_INCLUDE "rmm"
+    HINTS
+    "$ENV{RMM_ROOT}/include"
+    "$ENV{CONDA_PREFIX}/include/rmm"
+    "$ENV{CONDA_PREFIX}/include")
+
+find_library(RMM_LIBRARY "rmm"
+    HINTS
+    "$ENV{RMM_ROOT}/lib"
+    "$ENV{CONDA_PREFIX}/lib")
+
+message(STATUS "RMM: RMM_LIBRARY set to ${RMM_LIBRARY}")
+message(STATUS "RMM: RMM_INCLUDE set to ${RMM_INCLUDE}")
+
+add_library(rmm SHARED IMPORTED ${RMM_LIBRARY})
+if (RMM_INCLUDE AND RMM_LIBRARY)
+    set_target_properties(rmm PROPERTIES IMPORTED_LOCATION ${RMM_LIBRARY})
+endif (RMM_INCLUDE AND RMM_LIBRARY)
 
 ###################################################################################################
 # - library paths ---------------------------------------------------------------------------------

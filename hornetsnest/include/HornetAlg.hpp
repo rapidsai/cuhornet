@@ -41,8 +41,8 @@
 #ifndef HORNET_ALG_HPP
 #define HORNET_ALG_HPP
 
-#include "HornetAlg.cuh"
-#include "Operator++.cuh"
+#include <HornetAlg.cuh>
+#include <Operator++.cuh>
 #include "Queue/TwoLevelQueue.cuh"
 #include "StandardAPI.hpp"
 #include "HostDeviceVar.cuh"

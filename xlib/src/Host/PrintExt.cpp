@@ -39,23 +39,6 @@
 
 namespace xlib {
 
-#if defined(__linux__)
-
-std::ostream& operator<<(std::ostream& os, Color mod) {
-    return os << "\033[" << static_cast<int>(mod) << "m";
-}
-
-std::ostream& operator<<(std::ostream& os, Emph mod) {
-    return os << "\033[" << static_cast<int>(mod) << "m";
-}
-
-#else
-
-std::ostream& operator<<(std::ostream& os, Color mod) { return os; }
-std::ostream& operator<<(std::ostream& os, Emph mod)  { return os; };
-
-#endif
-
 //------------------------------------------------------------------------------
 
 // use space as separator

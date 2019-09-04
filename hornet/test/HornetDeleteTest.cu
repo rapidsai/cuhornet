@@ -6,6 +6,12 @@
 //#include <Device/Util/Timer.cuh>             //xlib::Timer
 #include <string>
 #include <algorithm>                    //std:.generate
+
+#include <Graph/GraphStd.hpp>
+#include <Host/Classes/Timer.hpp>
+#include <Device/Util/Timer.cuh>
+#include "Util/CommandLineParam.hpp"
+
 using namespace std::string_literals;
 
 using vert_t = int;
@@ -127,17 +133,13 @@ int exec(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
     int ret = 0;
-#if defined(RMM_WRAPPER)
-    gpu::initializeRMMPoolAllocation();//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
+    hornets_nest::gpu::initializeRMMPoolAllocation();//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
     {//scoping technique to make sure that gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
-#endif
 
     ret = exec(argc, argv);
 
-#if defined(RMM_WRAPPER)
     }//scoping technique to make sure that gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
-    gpu::finalizeRMMPoolAllocation();
-#endif
+    hornets_nest::gpu::finalizeRMMPoolAllocation();
 
     return ret;
 }

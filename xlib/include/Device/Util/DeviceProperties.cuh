@@ -301,14 +301,6 @@ public:
     static int resident_warps() noexcept;
 
     /**
-     * @brief Return the total of blocks of a given size by considering all
-     *        Streaming Multiprocessors for the current GPU device
-     * @param[in] block_size Number of threads in a block
-     * @return Total number of GPU blocks
-     */
-    static int resident_blocks(int block_size) noexcept;
-
-    /**
      * @brief Return the available shared memory for thread by considering
      *        data size and block size
      * @tparam T data type

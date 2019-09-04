@@ -47,7 +47,7 @@ reallocate_vertices(gpu::BatchUpdate<vid_t, TypeList<EdgeMetaTypes...>, degree_t
     batch.get_reallocate_vertices_meta_data(
             hornet_device, h_realloc_v_data, h_new_v_data, d_realloc_v_data, d_new_v_data, reallocated_vertices_count, is_insert);
 
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
     for (degree_t i = 0; i < reallocated_vertices_count; i++) {
         auto ref = h_new_v_data[i];
         auto access_data = _ba_manager.insert(ref.template get<0>());
@@ -59,14 +59,14 @@ reallocate_vertices(gpu::BatchUpdate<vid_t, TypeList<EdgeMetaTypes...>, degree_t
     ////Move adjacency list and edit vertex access data
     batch.move_adjacency_lists(hornet_device, _vertex_data.get_soa_ptr(), h_realloc_v_data, h_new_v_data, d_realloc_v_data, d_new_v_data, reallocated_vertices_count, is_insert);
 
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
     for (degree_t i = 0; i < reallocated_vertices_count; i++) {
         auto ref = h_realloc_v_data[i];
         if (ref.template get<0>() != 0) {
           _ba_manager.remove(ref.template get<0>(), ref.template get<1>(), ref.template get<2>());
         }
     }
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
 
 }
 
