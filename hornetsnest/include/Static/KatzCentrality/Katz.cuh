@@ -119,11 +119,15 @@ public:
 
     KatzData katz_data();
 
+    double getAlpha();
+    bool hasConverged();
+
 private:
     load_balancing::BinarySearch load_balancing;
     HostDeviceVar<KatzData>     hd_katzdata;
     ulong_t**                   h_paths_ptr;
-    bool                        is_static;
+    bool                          is_static;
+    bool                          converged;
 
     double tol;
     double * kc_out_ptr;
@@ -322,6 +326,16 @@ void KATZCENTRALITY::release(){
 
 
 template <typename HornetGraph>
+bool KATZCENTRALITY::hasConverged(void) {
+  return converged;
+}
+
+template <typename HornetGraph>
+double KATZCENTRALITY::getAlpha(void) {
+  return hd_katzdata().alpha;
+}
+
+template <typename HornetGraph>
 void KATZCENTRALITY::run() {
     // Initialized the paths and set the number of paths to 1 for all vertices
     // (Each vertex has a path to itself). This is equivalent to iteration 0.
@@ -329,6 +343,7 @@ void KATZCENTRALITY::run() {
 
     // Update Kataz Centrality scores for the given number of iterations
     hd_katzdata().iteration  = 1;
+    double err = 0;
     while (hd_katzdata().iteration <= hd_katzdata().max_iteration) {
         // Alpha^I is computed at the beginning of every iteration.
         hd_katzdata().alphaI            = std::pow(hd_katzdata().alpha,hd_katzdata().iteration);
@@ -338,7 +353,6 @@ void KATZCENTRALITY::run() {
 
         hd_katzdata().iteration++;
 
-        double err = 0;
         {
           auto curr_path = thrust::device_pointer_cast(hd_katzdata().num_paths_curr);
           err = thrust::transform_reduce(
@@ -361,6 +375,7 @@ void KATZCENTRALITY::run() {
 
     }
     hd_katzdata().iteration--;
+    converged = (err < tol);
 
     if(hd_katzdata().normalized == true){
 
