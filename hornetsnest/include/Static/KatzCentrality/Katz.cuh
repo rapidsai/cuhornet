@@ -340,6 +340,7 @@ void KATZCENTRALITY::run() {
     // Initialized the paths and set the number of paths to 1 for all vertices
     // (Each vertex has a path to itself). This is equivalent to iteration 0.
     forAllnumV(StaticAlgorithm<HornetGraph>::hornet, Init { hd_katzdata });
+    tol = tol * StaticAlgorithm<HornetGraph>::hornet.nV();
 
     // Update Kataz Centrality scores for the given number of iterations
     hd_katzdata().iteration  = 1;
@@ -359,7 +360,7 @@ void KATZCENTRALITY::run() {
               curr_path,
               curr_path + StaticAlgorithm<HornetGraph>::hornet.nV(),
               katz_detail::Scale(hd_katzdata().alphaI),
-              err,
+              static_cast<double>(0),
               thrust::plus<double>());
         }
 
