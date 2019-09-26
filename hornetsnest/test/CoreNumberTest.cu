@@ -1,6 +1,6 @@
 
 /**
- * @brief KCore decomposition test program
+ * @brief CoreNumber test program
  * @file
  */
 
@@ -12,7 +12,6 @@ using namespace timer;
 using namespace hornets_nest;
 
 int main(int argc, char **argv) {
-    // cudaSetDevice(1);
     using namespace graph::structure_prop;
     using namespace graph::parsing_prop;
 
