@@ -143,63 +143,6 @@ void indexBinarySearch(vert_t* data, vert_t arrLen, vert_t key, int& pos) {
     }
 }
 
-/*
-
-template<bool uMasked, bool vMasked, bool subtract, bool upd3rdV,
-         typename HornetDevice>
-__device__ __forceinline__
-void intersectCount(HornetDevice& hornet,
-                    vert_t uLength, vert_t vLength,
-                    const vert_t* __restrict__ uNodes,
-                    const vert_t* __restrict__ vNodes,
-                    vert_t*       __restrict__ uCurr,
-                    vert_t*       __restrict__ vCurr,
-                    int*         __restrict__ workIndex,
-                    const int*   __restrict__ workPerThread,
-                    int*         __restrict__ triangles,
-                    int found,
-                    const triangle_t*  __restrict__ output_triangles,
-                    const vert_t*  __restrict__ uMask,
-                    const vert_t*  __restrict__ vMask,
-                    triangle_t multiplier,
-                    vert_t src, vert_t dest,
-                    vert_t u, vert_t v) {
-
-    if (*uCurr < uLength && *vCurr < vLength) {
-        int comp;
-        int vmask;
-        int umask;
-        while (*workIndex < *workPerThread) {
-            // vmask = vMasked ? vMask[*vCurr] : 0;
-            // umask = uMasked ? uMask[*uCurr] : 0;
-            vmask=umask=0;
-            comp  = uNodes[*uCurr] - vNodes[*vCurr];
-
-            *triangles += (comp == 0);
-
-            *uCurr     += (comp <= 0 && !vmask) || umask;
-            *vCurr     += (comp >= 0 && !umask) || vmask;
-            *workIndex += (comp == 0 && !umask && !vmask) + 1;
-
-            if (*vCurr >= vLength || *uCurr >= uLength)
-                break;
-            // comp  = uNodes[*uCurr] - vNodes[*vCurr];
-
-            // *triangles += (comp == 0);
-            // *uCurr     += (comp <= 0) ;
-            // *vCurr     += (comp >= 0);
-            // *workIndex += (comp == 0) + 1;
-
-            // if (*vCurr >= vLength || *uCurr >= uLength)
-            //     break;
-
-
-        }
-        *triangles -= ((comp == 0) && (*workIndex > *workPerThread) && found);
-    }
-}
-*/
-
 template<typename HornetDevice>
 __device__ __forceinline__
 void intersectCount(const HornetDevice& hornet,
@@ -294,65 +237,6 @@ triangle_t count_triangles(const HornetDevice& hornet,
     return triangles;
 }
 
-/*
-// u_len < v_len
-template <bool uMasked, bool vMasked, bool subtract, bool upd3rdV,
-          typename HornetDevice>
-__device__ __forceinline__
-triangle_t count_triangles(HornetDevice& hornet,
-                           vert_t u,
-                           const vert_t* __restrict__ u_nodes,
-                           vert_t u_len,
-                           vert_t v,
-                           const vert_t* __restrict__ v_nodes,
-                           vert_t v_len,
-                           int   threads_per_block,
-                           volatile vert_t* __restrict__ firstFound,
-                           int    tId,
-                           const triangle_t* __restrict__ output_triangles,
-                           const vert_t*      __restrict__ uMask,
-                           const vert_t*      __restrict__ vMask,
-                           triangle_t multiplier,
-                           vert_t      src,
-                           vert_t      dest) {
-
-    // Partitioning the work to the multiple thread of a single GPU processor.
-    //The threads should get a near equal number of the elements to
-    //Tersect - this number will be off by 1.
-    int work_per_thread, diag_id;
-    workPerThread(u_len, v_len, threads_per_block, tId,
-                  &work_per_thread, &diag_id);
-    triangle_t triangles = 0;
-    int       work_index = 0;
-    int            found = 0;
-    vert_t u_min, u_max, v_min, v_max, u_curr, v_curr;
-
-    firstFound[tId] = 0;
-
-    if (work_per_thread > 0) {
-        // For the binary search, we are figuring out the initial poT of search.
-        initialize(diag_id, u_len, v_len, &u_min, &u_max,
-                   &v_min, &v_max, &found);
-        u_curr = 0;
-        v_curr = 0;
-
-        bSearch(found, diag_id, u_nodes, v_nodes, &u_len, &u_min, &u_max,
-                &v_min, &v_max, &u_curr, &v_curr);
-
-        int sum = fixStartPoint(u_len, v_len, &u_curr, &v_curr,
-                                u_nodes, v_nodes);
-        work_index += sum;
-        if (tId > 0)
-           firstFound[tId - 1] = sum;
-        triangles += sum;
-        intersectCount<uMasked, vMasked, subtract, upd3rdV>
-            (hornet, u_len, v_len, u_nodes, v_nodes, &u_curr, &v_curr,
-            &work_index, &work_per_thread, &triangles, firstFound[tId],
-            output_triangles, uMask, vMask, multiplier, src, dest, u, v);
-    }
-    return triangles;
-}
-*/
 
 
 __device__ __forceinline__
@@ -378,18 +262,9 @@ void workPerBlock(vert_t numVertices,
 //==============================================================================
 
 
-// template<typename HornetDevice>
-// __global__
-// void devicecuStingerKTruss(HornetDevice hornet,
-//                            const triangle_t* __restrict__ output_triangles,
-//                            int threads_per_block,
-//                            int number_blocks,
-//                            int shifter,
-//                            HostDeviceVar<KTrussData> hd_data)
-
 template<typename HornetDevice>
 __global__
-void devicecuStingerKTruss(HornetDevice hornet,
+void devicecuHornetKTruss(HornetDevice hornet,
                            triangle_t* __restrict__ outPutTriangles,
                            int threads_per_block,
                            int number_blocks,
@@ -453,85 +328,6 @@ void devicecuStingerKTruss(HornetDevice hornet,
 
 
 
-/*
-template<typename HornetDevice>
-__global__
-void devicecuStingerKTruss(HornetDevice hornet,
-                           const triangle_t* __restrict__ output_triangles,
-                           int threads_per_block,
-                           int number_blocks,
-                           int shifter,
-                           HostDeviceVar<KTrussData> hd_data) {
-    vert_t nv = hornet.nV();
-
-    // Partitioning the work to the multiple thread of a single GPU processor.
-    //The threads should get a near equal number of the elements
-    //to intersect - this number will be off by no more than one.
-    int tx = threadIdx.x;
-    vert_t this_mp_start, this_mp_stop;
-
-    const int blockSize = blockDim.x;
-    workPerBlock(nv, &this_mp_start, &this_mp_stop, blockSize);
-
-    //__shared__ triangle_t s_triangles[1024];
-    __shared__ vert_t      firstFound[1024];
-
-    vert_t     adj_offset = tx >> shifter;
-    vert_t* firstFoundPos = firstFound + (adj_offset << shifter);
-    for (vert_t src = this_mp_start; src < this_mp_stop; src++) {
-        //vert_t      srcLen = hornet->dVD->getUsed()[src];
-        auto vertex = hornet.vertex(src);
-        vert_t  srcLen = vertex.degree();
-
-        // triangle_t tCount = 0;
-        for(int k = adj_offset; k < srcLen; k += number_blocks) {
-            //vert_t  dest = hornet->dVD->getAdj()[src]->dst[k];
-            vert_t dest = vertex.edge(k).dst_id();
-            //int destLen = hornet->dVD->getUsed()[dest];
-            int destLen = hornet.vertex(dest).degree();
-
-            // if (dest < src) //opt
-            //     continue;   //opt
-
-            bool avoidCalc = (src == dest) || (destLen < 2) || (srcLen < 2);
-            if (avoidCalc)
-                continue;
-
-            bool sourceSmaller = srcLen < destLen;
-            vert_t        small = sourceSmaller ? src : dest;
-            vert_t        large = sourceSmaller ? dest : src;
-            vert_t    small_len = sourceSmaller ? srcLen : destLen;
-            vert_t    large_len = sourceSmaller ? destLen : srcLen;
-
-            //const vert_t* small_ptr = hornet->dVD->getAdj()[small]->dst;
-            //const vert_t* large_ptr = hornet->dVD->getAdj()[large]->dst;
-            const vert_t* small_ptr = hornet.vertex(small).neighbor_ptr();
-            const vert_t* large_ptr = hornet.vertex(large).neighbor_ptr();
-
-            // triangle_t triFound = count_triangles<false,false,false,true>
-            triangle_t triFound = count_triangles<false, false, false, false>
-                (hornet, small, small_ptr, small_len, large, large_ptr,
-                 large_len, threads_per_block, firstFoundPos,
-                 tx % threads_per_block, output_triangles,
-                 nullptr, nullptr, 1, src, dest);
-            // tCount += triFound;
-            int pos = hd_data().offset_array[src] + k;
-            atomicAdd(hd_data().triangles_per_edge + pos, triFound);
-            // pos = -1; //opt
-            // //indexBinarySearch(hornet->dVD->getAdj()[dest]->dst
-            // //                  destLen, src,pos);
-            // auto dest_ptr = hornet.vertex(dest).neighbor_ptr();
-            // indexBinarySearch(dest_ptr, destLen, src, pos);
-
-            // pos = hd_data().offset_array[dest] + pos;
-            // atomicAdd(hd_data().triangles_per_edge + pos, triFound);
-        }
-    //    s_triangles[tx] = tCount;
-    //    blockReduce(&output_triangles[src],s_triangles,blockSize);
-    }
-}
-*/
-
 //==============================================================================
 
 void kTrussOneIteration(HornetGraph& hornet,
@@ -542,11 +338,7 @@ void kTrussOneIteration(HornetGraph& hornet,
                         int thread_blocks,
                         int blockdim,
                         HostDeviceVar<KTrussData>& hd_data) {
-
-    //devicecuStingerKTruss <<< thread_blocks, blockdim >>>
-    //    (hornet.devicePtr(), output_triangles, threads_per_block,
-    //     number_blocks, shifter, devData);
-    devicecuStingerKTruss <<< thread_blocks, blockdim >>>
+    devicecuHornetKTruss <<< thread_blocks, blockdim >>>
         (hornet.device(), output_triangles, threads_per_block,
          number_blocks, shifter, hd_data);
 
