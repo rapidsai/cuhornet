@@ -158,12 +158,12 @@ void
 BATCH_UPDATE::
 reset(BatchUpdatePtr<vid_t, TypeList<EdgeMetaTypes...>, device_t, degree_t> ptr) noexcept {
     _nE = ptr.nE();
-    _edge[0].resize(_nE);
-    _edge[1].resize(_nE);
-    unique_sources.resize(_nE);
+    _edge[0].resize(_nE + 1);
+    _edge[1].resize(_nE + 1);
+    unique_sources.resize(_nE + 1);
     unique_degrees.resize(_nE + 1);
     duplicate_flag.resize(_nE + 1);
-    cub_runlength.resize(_nE);
+    cub_runlength.resize(_nE + 1);
     batch_offsets.resize(_nE + 1);
     graph_offsets.resize(_nE + 1);
     cub_prefixsum.resize(_nE + 1);
@@ -171,15 +171,15 @@ reset(BatchUpdatePtr<vid_t, TypeList<EdgeMetaTypes...>, device_t, degree_t> ptr)
     current_edge = 0;
     in_edge().copy(ptr.get_ptr(), device_t, (int)_nE);
     if (1 < sizeof...(EdgeMetaTypes)) {
-        in_range().resize(_nE);
-        out_range().resize(_nE);
+         in_range().resize(_nE + 1);
+        out_range().resize(_nE + 1);
     }
 
-    vertex_access[0].resize(_nE);
-    vertex_access[1].resize(_nE);
-    host_vertex_access[0].resize(_nE);
-    host_vertex_access[1].resize(_nE);
-    realloc_sources.resize(_nE);
+    vertex_access[0].resize(_nE + 1);
+    vertex_access[1].resize(_nE + 1);
+    host_vertex_access[0].resize(_nE + 1);
+    host_vertex_access[1].resize(_nE + 1);
+    realloc_sources.resize(_nE + 1);
     realloc_sources_count_buffer.resize(1);
 }
 
@@ -782,7 +782,7 @@ move_adjacency_lists(
             h_new_v_data, DeviceType::HOST,
             d_new_v_data, DeviceType::DEVICE,
             reallocated_vertices_count);
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
 
     //Get offsets for binarySearchLB kernel
     duplicate_flag.resize(reallocated_vertices_count + 1);
@@ -790,7 +790,7 @@ move_adjacency_lists(
     //        d_realloc_v_data. template get<0>(), DeviceType::DEVICE,
     //        duplicate_flag.data().get(), DeviceType::DEVICE,
     //        reallocated_vertices_count);
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
     if (is_insert) {
     cub_prefixsum.run(d_realloc_v_data. template get<0>(),
             duplicate_flag.size(),
@@ -800,7 +800,7 @@ move_adjacency_lists(
             duplicate_flag.size(),
             duplicate_flag.data().get());
     }
-    CUDA_CHECK_LAST()
+    PEEK_LAST_STATUS()
     degree_t total_work = duplicate_flag[duplicate_flag.size() - 1];
     if (total_work != 0)  {
       const int BLOCK_SIZE = 256;
@@ -813,7 +813,7 @@ move_adjacency_lists(
                   d_new_v_data,
                   duplicate_flag.data().get(),
                   duplicate_flag.size());
-      CUDA_CHECK_LAST()
+      PEEK_LAST_STATUS()
     }
     if (reallocated_vertices_count != 0) {
       const int BLOCK_SIZE = 256;
@@ -824,7 +824,7 @@ move_adjacency_lists(
                   vertex_access_ptr,
                   d_new_v_data,
                   reallocated_vertices_count);
-      CUDA_CHECK_LAST()
+      PEEK_LAST_STATUS()
     }
 }
 

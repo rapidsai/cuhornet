@@ -85,9 +85,4 @@ int DeviceProperty::resident_warps() noexcept {
     return num_SM() * (xlib::THREADS_PER_SM / xlib::WARP_SIZE);
 }
 
-int DeviceProperty::resident_blocks(int block_size) noexcept {
-    auto size = xlib::upper_approx<xlib::WARP_SIZE>(block_size);
-    return num_SM() * (xlib::THREADS_PER_SM / static_cast<unsigned>(size));
-}
-
 } // namespace xlib

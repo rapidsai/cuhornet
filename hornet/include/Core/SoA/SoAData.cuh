@@ -66,7 +66,7 @@ class SoAData<TypeList<Ts...>, device_t> {
     typename thrust::device_vector<T>,
     typename thrust::host_vector<T>>::type;
 
-    SoAData(const int num_items = 0) noexcept;
+    SoAData(const int num_items = 0, bool initToZero = false) noexcept;
 
     ~SoAData(void) noexcept;
 
@@ -99,6 +99,8 @@ class SoAData<TypeList<Ts...>, device_t> {
     void resize(const int resize_items) noexcept;
 
     DeviceType get_device_type(void) noexcept;
+
+    void setEmpty(void) noexcept;
 };
 
 template<typename... Ts, DeviceType device_t>
@@ -133,7 +135,9 @@ class CSoAData<TypeList<Ts...>, device_t> {
 
     const CSoAPtr<Ts...>& get_soa_ptr(void) const noexcept;
 
-    void copy(SoAPtr<Ts...> other, const DeviceType other_d_t, const int other_num_items) noexcept;
+    void copy(SoAPtr<Ts const...> other, DeviceType other_d_t, int other_num_items) noexcept;
+
+    void copy(SoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept;
 
     template<DeviceType d_t>
     void copy(CSoAData<TypeList<Ts...>, d_t>&& other) noexcept;
@@ -147,16 +151,16 @@ class CSoAData<TypeList<Ts...>, device_t> {
 
 
 template<typename... Ts>
-void print(SoAData<TypeList<Ts...>, DeviceType::HOST>& data);
+void print_soa(SoAData<TypeList<Ts...>, DeviceType::HOST>& data);
 
 template<typename... Ts>
-void print(SoAData<TypeList<Ts...>, DeviceType::DEVICE>& data);
+void print_soa(SoAData<TypeList<Ts...>, DeviceType::DEVICE>& data);
 
 template<typename... Ts>
-void print(CSoAData<TypeList<Ts...>, DeviceType::HOST>& data);
+void print_soa(CSoAData<TypeList<Ts...>, DeviceType::HOST>& data);
 
 template<typename... Ts>
-void print(CSoAData<TypeList<Ts...>, DeviceType::DEVICE>& data);
+void print_soa(CSoAData<TypeList<Ts...>, DeviceType::DEVICE>& data);
 
 }
 

@@ -60,66 +60,96 @@ template<>
 struct DeviceProp<300> {
     static const unsigned SMEM_PER_SM    = 49152;
     static const unsigned RBLOCKS_PER_SM = 16;
+    static const unsigned arch = 300;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<320> {
     static const unsigned SMEM_PER_SM    = 49152;
     static const unsigned RBLOCKS_PER_SM = 16;
+    static const unsigned arch = 320;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<350> {
     static const unsigned SMEM_PER_SM    = 49152;
     static const unsigned RBLOCKS_PER_SM = 16;
+    static const unsigned arch = 350;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<370> {
     static const unsigned SMEM_PER_SM    = 114688;
     static const unsigned RBLOCKS_PER_SM = 16;
+    static const unsigned arch = 370;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<500> {
     static const unsigned SMEM_PER_SM    = 65536;
     static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 500;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<520> {
     static const unsigned SMEM_PER_SM    = 98304;
     static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 520;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<530> {
     static const unsigned SMEM_PER_SM    = 65536;
     static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 530;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<600> {
     static const unsigned SMEM_PER_SM    = 65536;
     static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 600;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<610> {
     static const unsigned SMEM_PER_SM    = 98304;
     static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 610;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<620> {
     static const unsigned SMEM_PER_SM    = 65536;
     static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 620;
+    static const unsigned THREADS_PER_SM = 2048;
 };
 
 template<>
 struct DeviceProp<700> {
     static const unsigned SMEM_PER_SM    = 98304;
     static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 700;
+    static const unsigned THREADS_PER_SM = 2048;
+};
+
+template<>
+struct DeviceProp<750> {
+    static const unsigned SMEM_PER_SM    = 65536;
+    static const unsigned RBLOCKS_PER_SM = 16;
+    static const unsigned arch = 750;
+    static const unsigned THREADS_PER_SM = 1024;
 };
 
 //==============================================================================
@@ -138,8 +168,8 @@ constexpr unsigned smem_per_thread() {
     unsigned RBLOCKS_PER_SM = DeviceProp<__CUDA_ARCH__>::RBLOCKS_PER_SM;
 
     unsigned _BLOCK_SIZE    = (BLOCK_SIZE == 0) ?
-                              THREADS_PER_SM / RBLOCKS_PER_SM : BLOCK_SIZE;
-    unsigned NUM_BLOCKS     = THREADS_PER_SM / _BLOCK_SIZE;
+                              DeviceProp<__CUDA_ARCH__>::THREADS_PER_SM / RBLOCKS_PER_SM : BLOCK_SIZE;
+    unsigned NUM_BLOCKS     = DeviceProp<__CUDA_ARCH__>::THREADS_PER_SM / _BLOCK_SIZE;
     unsigned ACTUAL_BLOCKS  = xlib::min(RBLOCKS_PER_SM, NUM_BLOCKS);
     unsigned SMEM_PER_BLOCK = xlib::min(SMEM_PER_SM / ACTUAL_BLOCKS,
                                         MAX_BLOCK_SMEM);
@@ -249,18 +279,25 @@ int DeviceProperty::smem_per_warp(int block_size) noexcept {
            (block_size / xlib::WARP_SIZE);
 }
 
-template<typename T>
+template <typename T>
 int DeviceProperty::smem_per_block(int block_size) noexcept {
-    assert(block_size >= 0 && block_size < MAX_BLOCK_SIZE &&
-           "BLOCK_SIZE range");
+  int dev_mjr;
+  cudaDeviceGetAttribute ( &dev_mjr, cudaDevAttrComputeCapabilityMajor, 0);
+  int dev_mnr;
+  cudaDeviceGetAttribute ( &dev_mnr, cudaDevAttrComputeCapabilityMinor, 0);
+  int smem_sm;
+  cudaDeviceGetAttribute ( &smem_sm, cudaDevAttrMaxSharedMemoryPerMultiprocessor, 0);
+  int smem_bl;
+  cudaDeviceGetAttribute ( &smem_bl, cudaDevAttrMaxSharedMemoryPerBlock, 0);
+  int thrd_sm;
+  cudaDeviceGetAttribute ( &thrd_sm, cudaDevAttrMaxThreadsPerMultiProcessor, 0);
 
-    int max_blocks     = DeviceProperty::resident_blocks_per_SM();
-    int SM_smem        = DeviceProperty::smem_per_SM();
-    int num_blocks     = xlib::THREADS_PER_SM / block_size;
-    int actual_blocks  = std::min(max_blocks, num_blocks);
-    int smem_per_block = std::min(SM_smem / actual_blocks,
-                                   static_cast<int>(MAX_BLOCK_SMEM));
-    return smem_per_block / sizeof(T);
+  int max_blocks = (dev_mjr >= 5) ? 32 : 16;
+  if (dev_mjr == 7 && dev_mnr == 5) max_blocks = 16;
+  int num_blocks = thrd_sm/block_size;
+  int actual_blocks = std::min(max_blocks, num_blocks);
+  int smem_per_block = std::min(smem_sm / actual_blocks, smem_bl);
+  return smem_per_block/sizeof(T);
 }
 
 //------------------------------------------------------------------------------

@@ -9,6 +9,11 @@
 #include <random>                       //std::mt19937_64
 #include <cuda_profiler_api.h>
 
+#include <Graph/GraphStd.hpp>
+#include <Host/Classes/Timer.hpp>
+#include <Device/Util/Timer.cuh>
+#include "Util/CommandLineParam.hpp"
+
 //using namespace hornets_nest;
 using namespace timer;
 using namespace std::string_literals;
@@ -78,17 +83,13 @@ int exec(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
     int ret = 0;
-#if defined(RMM_WRAPPER)
-    gpu::initializeRMMPoolAllocation();//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
-    {//scoping technique to make sure that gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
-#endif
+    hornets_nest::gpu::initializeRMMPoolAllocation();//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
+    {//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
 
     ret = exec(argc, argv);
 
-#if defined(RMM_WRAPPER)
-    }//scoping technique to make sure that gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
-    gpu::finalizeRMMPoolAllocation();
-#endif
+    }//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
+    hornets_nest::gpu::finalizeRMMPoolAllocation();
 
     return ret;
 }

@@ -50,11 +50,11 @@ private:
         TypeList<vid_t, EdgeMetaTypes...>,
         DeviceType::DEVICE> _edge_data;
 
-    void initialize(HInitT& h_init) noexcept;
+    void initialize(HInitT& h_init, DeviceType h_init_type) noexcept;
 
 public:
 
-    HornetStatic(HInitT& h_init) noexcept;
+    HornetStatic(HInitT& h_init, DeviceType h_init_type = DeviceType::HOST) noexcept;
 
     void print(void);
 
@@ -63,6 +63,11 @@ public:
     degree_t nE(void) const noexcept;
 
     HornetDeviceT device(void) noexcept;
+
+    vid_t max_degree_id(void) const noexcept;
+
+    degree_t max_degree(void) const noexcept;
+
 };
 
 #define HORNETSTATIC HornetStatic<vid_t,\
