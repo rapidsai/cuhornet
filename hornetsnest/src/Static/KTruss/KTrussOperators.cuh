@@ -40,6 +40,30 @@ struct FindUnderK {
     }
 };
 
+
+struct SimpleBubbleSort {
+
+    OPERATOR(Vertex& vertex) {
+        vert_t src = vertex.id();
+
+        degree_t size = vertex.degree();
+        for (vert_t i = 0; i < (size-1); i++) {
+            vert_t min_idx=i;
+
+            for(vert_t j=i+1; j<(size); j++){
+                if(vertex.neighbor_ptr()[j]<vertex.neighbor_ptr()[min_idx])
+                    min_idx=j;
+            }
+            vert_t temp = vertex.neighbor_ptr()[i];
+            vertex.neighbor_ptr()[i] = vertex.neighbor_ptr()[min_idx];
+            vertex.neighbor_ptr()[min_idx] = temp;
+
+
+        }
+ 
+    }
+};
+
 //------------------------------------------------------------------------------
 
 struct CountActive {
