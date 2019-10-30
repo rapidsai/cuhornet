@@ -9,7 +9,7 @@ using namespace std;
 namespace hornets_nest {
 
 void kTrussOneIteration(HornetGraph& hornet,
-                        const triangle_t*  __restrict__ output_triangles,
+                        triangle_t*  __restrict__ output_triangles,
                         int threads_per_block,
                         int number_blocks,
                         int shifter,
@@ -118,7 +118,7 @@ void KTruss::run() {
         //std::cout << hd_data().num_edges_remaining << std::endl;
         bool need_stop = false;
 
-        printf("Number of remaining edges %ld\n",hd_data().num_edges_remaining);
+        // printf("Number of remaining edges %ld\n",hd_data().num_edges_remaining);
 
         bool      more = findTrussOfK(need_stop);
 
@@ -165,7 +165,7 @@ bool KTruss::findTrussOfK(bool& stop) {
     while (h_active_vertices > 0) {
 
 
-        std::cout << "MaxK =  " << hd_data().max_K << std::endl;
+        // std::cout << "MaxK =  " << hd_data().max_K << std::endl;
 
         hd_data().full_triangle_iterations++;
 
@@ -174,15 +174,15 @@ bool KTruss::findTrussOfK(bool& stop) {
                            hd_data().shifter,
                            hd_data().blocks, hd_data().sps,
                            hd_data);
-        CHECK_ERROR("Crashing after tricount")
+        // CHECK_ERROR("Crashing after tricount")
 
         forAllVertices(hornet, FindUnderK { hd_data });
-        CHECK_ERROR("Crashing after findk")
+        // CHECK_ERROR("Crashing after findk")
 
         int h_counter;
         cudaMemcpy(&h_counter,hd_data().counter, sizeof(int),cudaMemcpyDeviceToHost);
 
-        std::cout << "Current number of deleted edges is " << h_counter << std::endl;
+        // std::cout << "Current number of deleted edges is " << h_counter << std::endl;
 
         if (h_counter != 0) {
               UpdatePtr ptr(h_counter, hd_data().src, hd_data().dst);
@@ -198,21 +198,18 @@ bool KTruss::findTrussOfK(bool& stop) {
             return false;
         }
 
-        if(hd_data().num_edges_remaining==0)
-            printf("BAAAA\n");
-
         hd_data().num_edges_remaining -= h_counter;
-        if(hd_data().num_edges_remaining==0)
-            printf("GAAAA\n");
-
 
         // Resetting the number of active vertices before check
         cudaMemset(hd_data().active_vertices,0, sizeof(int));
         forAllVertices(hornet, CountActive { hd_data });
+        forAllVertices(hornet, SimpleBubbleSort {});
+        
+
         // Getting the number of active vertices
 
         cudaMemcpy(&h_active_vertices, hd_data().active_vertices,sizeof(int),cudaMemcpyDeviceToHost);
-        printf("Number of active vertices %d\n",h_active_vertices);
+        // printf("Number of active vertices %d\n",h_active_vertices);
 
         // CHECK_ERROR("Crashing after counting")
 

@@ -6,7 +6,7 @@ namespace hornets_nest {
 
 // const bool _FORCE_SOA = true;
 
-using triangle_t = int;
+using triangle_t = vert_t;
 
 using HornetGraph = hornet::gpu::Hornet<vert_t>;
 // using HornetGraph = gpu::Hornet<vert_t>;
