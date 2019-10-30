@@ -71,7 +71,6 @@ int exec(int argc, char* argv[]) {
     gpu::allocate(gpuOffset, graph.nV()+1);
     cudaMemcpy(gpuOffset,graph.csr_out_offsets(),sizeof(vert_t)*(graph.nV()+1), cudaMemcpyHostToDevice);
     
-    printf("pause\n");
     // int temp;
 
     // int temp2=scanf("%d",&temp);
@@ -86,8 +85,8 @@ int exec(int argc, char* argv[]) {
 
 
 
-    ktruss.setInitParameters(1, 32, 0, 64000, 32);
-    // ktruss.setInitParameters(4, 8, 2, 64000, 32);
+    // ktruss.setInitParameters(1, 32, 0, 64000, 32);
+    ktruss.setInitParameters(4, 8, 2, 64000, 32);
  
     Timer<DEVICE> TM;
     ktruss.reset();
@@ -100,6 +99,7 @@ int exec(int argc, char* argv[]) {
     TM.stop();
 
     auto total_time = TM.duration();
+    TM.print("Time to find the k-truss");
 
     return 0;
 }
