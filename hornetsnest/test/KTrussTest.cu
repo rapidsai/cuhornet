@@ -57,13 +57,11 @@ int exec(int argc, char* argv[]) {
     GraphStd<vert_t, vert_t> graph(UNDIRECTED);
     
     graph.read(argv[1], SORT | PRINT_INFO );
-    printf("finished reading graph\n");
 
     HornetInit hornet_init(graph.nV(), graph.nE(),
                            graph.csr_out_offsets(),
                            graph.csr_out_edges());
 
-    printf("starting hornet\n");
     HornetGraph hornet_gpu(hornet_init);
 
     vert_t* gpuOffset;
@@ -100,23 +98,24 @@ int exec(int argc, char* argv[]) {
 
     auto total_time = TM.duration();
     TM.print("Time to find the k-truss");
+    std::cout << "The Maximal K-Truss is : " << ktruss.getMaxK() << std::endl;
 
     return 0;
 }
 
 int main(int argc, char* argv[]) {
     int ret = 0;
-#if defined(RMM_WRAPPER)
+// #if defined(RMM_WRAPPER)
     hornets_nest::gpu::initializeRMMPoolAllocation();//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
     {//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
-#endif
+// #endif
 
     ret = exec(argc, argv);
 
-#if defined(RMM_WRAPPER)
+// #if defined(RMM_WRAPPER)
     }//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
     hornets_nest::gpu::finalizeRMMPoolAllocation();
-#endif
+// #endif
 
     return ret;
 }
