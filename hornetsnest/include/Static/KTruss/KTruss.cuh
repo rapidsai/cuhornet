@@ -113,3 +113,6 @@ private:
 //                                    bool deletion);
 
 } // namespace hornets_nest
+
+
+#include "KTruss.impl.cuh"
