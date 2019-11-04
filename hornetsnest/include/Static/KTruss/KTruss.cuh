@@ -77,6 +77,7 @@ public:
     bool findTrussOfKDynamic(bool& stop);
     void runForKDynamic(int max_K);
 
+    void createOffSetArray();
     void copyOffsetArrayHost(const vert_t* host_offset_array);
     void copyOffsetArrayDevice(vert_t* device_offset_array);
     void resetEdgeArray();
@@ -84,6 +85,8 @@ public:
 
     vert_t getIterationCount();
     vert_t getMaxK();
+
+    void sortHornet();
 
 private:
     HostDeviceVar<KTrussData> hd_data;

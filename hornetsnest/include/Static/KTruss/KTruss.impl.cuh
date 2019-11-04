@@ -51,6 +51,29 @@ void KTruss::init(){
     reset();
 }
 
+void KTruss::createOffSetArray(){
+
+    gpu::memsetZero(hd_data().offset_array, originalNV+1);
+
+    int *tempSize;
+    gpu::allocate(tempSize, originalNV+1);
+
+    forAllVertices(hornet, getVertexSizes {tempSize});
+
+
+    void     *d_temp_storage = NULL; size_t   temp_storage_bytes = 0;
+    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, tempSize, hd_data().offset_array+1, originalNV);
+    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, tempSize, hd_data().offset_array+1, originalNV);
+    cudaFree(d_temp_storage);  
+
+
+
+
+
+    gpu::free(tempSize);
+}
+
 void KTruss::copyOffsetArrayHost(const vert_t* host_offset_array) {
     // host::copyToDevice(host_offset_array, hornet.nV() + 1,
     //                    hd_data().offset_array);
@@ -66,6 +89,10 @@ void KTruss::copyOffsetArrayDevice(vert_t* device_offset_array){
 
 vert_t KTruss::getMaxK() {
     return hd_data().max_K;
+}
+
+void KTruss::sortHornet(){
+        forAllVertices(hornet, SimpleBubbleSort {});
 }
 
 //==============================================================================
@@ -178,8 +205,10 @@ bool KTruss::findTrussOfK(bool& stop) {
         // Resetting the number of active vertices before check
         cudaMemset(hd_data().active_vertices,0, sizeof(int));
         forAllVertices(hornet, CountActive { hd_data });
-        forAllVertices(hornet, SimpleBubbleSort {});
-        
+
+        // forAllVertices(hornet, SimpleBubbleSort {});
+        sortHornet();
+
 
         // Getting the number of active vertices
 
@@ -190,9 +219,6 @@ bool KTruss::findTrussOfK(bool& stop) {
 
         cudaMemset(hd_data().counter,0, sizeof(int));//hd_data().counter = 0
         stop = false;
-
-
-
 
     }
     return true;

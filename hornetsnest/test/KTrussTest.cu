@@ -78,12 +78,9 @@ int exec(int argc, char* argv[]) {
     ktruss.init();
     ktruss.reset();
 
-    // ktruss.copyOffsetArrayDevice(gpuOffset);
     ktruss.copyOffsetArrayHost(graph.csr_out_offsets());
-
-
-
     // ktruss.setInitParameters(1, 32, 0, 64000, 32);
+    // ktruss.createOffSetArray();
     ktruss.setInitParameters(4, 8, 2, 64000, 32);
  
     Timer<DEVICE> TM;
@@ -91,8 +88,6 @@ int exec(int argc, char* argv[]) {
     TM.start();
 
     ktruss.run();
-
-
 
     TM.stop();
 
