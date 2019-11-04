@@ -36,6 +36,15 @@ struct FindUnderK {
     }
 };
 
+struct getVertexSizes {
+    int* sizes;
+
+    OPERATOR(Vertex& vertex) {
+        vert_t src = vertex.id();
+        sizes[src] = vertex.degree();
+    }
+};
+
 
 struct SimpleBubbleSort {
 
