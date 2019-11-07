@@ -68,9 +68,6 @@ void KTruss::createOffSetArray(){
     cudaFree(d_temp_storage);  
 
 
-
-
-
     gpu::free(tempSize);
 }
 
