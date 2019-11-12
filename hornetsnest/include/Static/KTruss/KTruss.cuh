@@ -73,9 +73,9 @@ public:
     bool findTrussOfK(bool& stop);
     void runForK(int max_K);
 
-    void runDynamic();
-    bool findTrussOfKDynamic(bool& stop);
-    void runForKDynamic(int max_K);
+    // void runDynamic();
+    // bool findTrussOfKDynamic(bool& stop);
+    // void runForKDynamic(int max_K);
 
     void createOffSetArray();
     void copyOffsetArrayHost(const vert_t* host_offset_array);
