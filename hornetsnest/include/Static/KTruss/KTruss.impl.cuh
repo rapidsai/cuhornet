@@ -1,6 +1,6 @@
 #include "Static/KTruss/KTruss.cuh"
 #include "KTrussOperators.cuh"
-#include "KTrussSupport.cu"
+#include "KTrussSupport.cuh"
 
 #include <iostream>
 
