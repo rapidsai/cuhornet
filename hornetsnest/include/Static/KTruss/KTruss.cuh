@@ -125,4 +125,4 @@ private:
 } // namespace hornets_nest
 
 
-#include "KTruss.impl.cuh"
+#include "Static/KTruss/KTruss.impl.cuh"
