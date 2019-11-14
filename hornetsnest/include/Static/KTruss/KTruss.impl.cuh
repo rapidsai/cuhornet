@@ -72,15 +72,10 @@ void KTruss::createOffSetArray(){
 }
 
 void KTruss::copyOffsetArrayHost(const vert_t* host_offset_array) {
-    // host::copyToDevice(host_offset_array, hornet.nV() + 1,
-    //                    hd_data().offset_array);
     cudaMemcpy(hd_data().offset_array,host_offset_array,(originalNV + 1)*sizeof(vert_t), cudaMemcpyHostToDevice);
-
 }
 
 void KTruss::copyOffsetArrayDevice(vert_t* device_offset_array){
-    // host::copyToDevice(device_offset_array, hornet.nV() + 1,
-    //                    hd_data().offset_array);
     cudaMemcpy(hd_data().offset_array,device_offset_array,(originalNV + 1)*sizeof(vert_t), cudaMemcpyDeviceToDevice);
 }
 
@@ -95,7 +90,7 @@ void KTruss::sortHornet(){
 //==============================================================================
 
 void KTruss::reset() {
-    cudaMemset(hd_data().counter,0, sizeof(int));//hd_data().counter = 0
+    cudaMemset(hd_data().counter,0, sizeof(int));
     hd_data().num_edges_remaining      = originalNE;
     hd_data().full_triangle_iterations = 0;
 
@@ -147,10 +142,6 @@ void KTruss::run() {
 
         iterations++;
     }
-    // std::cout << "iterations " << iterations << std::endl;
-    // cout << "Found the maximal KTruss at : " << hd_data().max_K << endl;
-    // std::cout << "The number of full triangle counting iterations is  : "
-    //          << hd_data().full_triangle_iterations << std::endl;
 }
 
 void KTruss::runForK(int max_K) {
@@ -165,7 +156,7 @@ bool KTruss::findTrussOfK(bool& stop) {
     resetEdgeArray();
     resetVertexArray();
  
-    cudaMemset(hd_data().counter,0, sizeof(int));//hd_data().counter = 0
+    cudaMemset(hd_data().counter,0, sizeof(int));
 
     int h_active_vertices = originalNV;
 
@@ -180,10 +171,8 @@ bool KTruss::findTrussOfK(bool& stop) {
                            hd_data().shifter,
                            hd_data().blocks, hd_data().sps,
                            hd_data);
-        // CHECK_ERROR("Crashing after tricount")
 
         forAllVertices(hornet, FindUnderK { hd_data });
-        // CHECK_ERROR("Crashing after findk")
 
         int h_counter;
         cudaMemcpy(&h_counter,hd_data().counter, sizeof(int),cudaMemcpyDeviceToHost);
@@ -203,18 +192,16 @@ bool KTruss::findTrussOfK(bool& stop) {
         cudaMemset(hd_data().active_vertices,0, sizeof(int));
         forAllVertices(hornet, CountActive { hd_data });
 
-        // forAllVertices(hornet, SimpleBubbleSort {});
         sortHornet();
 
 
         // Getting the number of active vertices
-
         cudaMemcpy(&h_active_vertices, hd_data().active_vertices,sizeof(int),cudaMemcpyDeviceToHost);
 
         resetEdgeArray();
         resetVertexArray();
 
-        cudaMemset(hd_data().counter,0, sizeof(int));//hd_data().counter = 0
+        cudaMemset(hd_data().counter,0, sizeof(int));
         stop = false;
 
     }
