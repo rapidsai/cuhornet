@@ -28,10 +28,13 @@
 
 
 #include "Static/KTruss/KTruss.cuh"
-#include "KTrussOperators.cuh"
-#include "KTrussSupport.cuh"
+#include "Static/KTruss/KTrussOperators.cuh"
+#include "Static/KTruss/KTrussSupport.cuh"
 
 #include <iostream>
+
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
 
 using namespace std;
 
@@ -89,13 +92,7 @@ void KTruss::createOffSetArray(){
 
     forAllVertices(hornet, getVertexSizes {tempSize});
 
-
-    void     *d_temp_storage = NULL; size_t   temp_storage_bytes = 0;
-    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, tempSize, hd_data().offset_array+1, originalNV);
-    cudaMalloc(&d_temp_storage, temp_storage_bytes);
-    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, tempSize, hd_data().offset_array+1, originalNV);
-    cudaFree(d_temp_storage);  
-
+    thrust::inclusive_scan(rmm::exec_policy(0)->on(0), tempSize, tempSize + originalNV, hd_data().offset_array+1);
 
     gpu::free(tempSize);
 }
