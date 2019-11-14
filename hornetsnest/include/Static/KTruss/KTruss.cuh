@@ -73,10 +73,6 @@ public:
     bool findTrussOfK(bool& stop);
     void runForK(int max_K);
 
-    // void runDynamic();
-    // bool findTrussOfKDynamic(bool& stop);
-    // void runForKDynamic(int max_K);
-
     void createOffSetArray();
     void copyOffsetArrayHost(const vert_t* host_offset_array);
     void copyOffsetArrayDevice(vert_t* device_offset_array);
@@ -93,27 +89,10 @@ private:
 
     vert_t originalNE;
     vert_t originalNV;
-
-    //load_balancing::BinarySearch load_balancing;
-    //load_balancing::VertexBased1 load_balancing;
 };
 
 #define CHECK_ERROR(str) \
     {cudaError_t err; err = cudaGetLastError(); if(err!=0) {printf("ERROR %s:  %d %s\n", str, err, cudaGetErrorString(err)); fflush(stdout); exit(0);}}
-
-
-
-//==============================================================================
-
-// void callDeviceDifferenceTriangles(const HornetGraph& hornet,
-//                                    const gpu::BatchUpdate& batch_update,
-//                                    triangle_t* __restrict__ output_triangles,
-//                                    int threads_per_intersection,
-//                                    int num_intersec_perblock,
-//                                    int shifter,
-//                                    int thread_blocks,
-//                                    int blockdim,
-//                                    bool deletion);
 
 } // namespace hornets_nest
 
