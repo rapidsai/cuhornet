@@ -92,7 +92,7 @@ public:
                            int blocks, int sps);
     void init();
 
-    bool findTrussOfK(bool& stop);
+    void findTrussOfK();
     void runForK(int max_K);
 
     void createOffSetArray();

@@ -156,9 +156,7 @@ void KTruss::run() {
     int  iterations = 0;
 
     while (true) {
-        bool need_stop = false;
-
-        bool      more = findTrussOfK(need_stop);
+        findTrussOfK();
 
         if (hd_data().num_edges_remaining <= 0) {
             hd_data().max_K--;
@@ -173,11 +171,10 @@ void KTruss::run() {
 void KTruss::runForK(int max_K) {
     hd_data().max_K = max_K;
 
-    bool exit_on_first_iteration;
-    findTrussOfK(exit_on_first_iteration);
+    findTrussOfK();
 }
 
-bool KTruss::findTrussOfK(bool& stop) {
+void KTruss::findTrussOfK() {
     forAllVertices(hornet, Init { hd_data });
     resetEdgeArray();
     resetVertexArray();
@@ -185,8 +182,6 @@ bool KTruss::findTrussOfK(bool& stop) {
     cudaMemset(hd_data().counter,0, sizeof(int));
 
     int h_active_vertices = originalNV;
-
-    stop = true;
 
     while (h_active_vertices > 0) {
 
@@ -209,7 +204,7 @@ bool KTruss::findTrussOfK(bool& stop) {
               hornet.erase(batch_update);
         }
         else{
-            return false;
+            return;
         }
 
         hd_data().num_edges_remaining -= h_counter;
@@ -228,10 +223,8 @@ bool KTruss::findTrussOfK(bool& stop) {
         resetVertexArray();
 
         cudaMemset(hd_data().counter,0, sizeof(int));
-        stop = false;
 
     }
-    return true;
 }
 
 
