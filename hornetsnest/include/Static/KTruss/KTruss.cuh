@@ -37,7 +37,6 @@ namespace hornets_nest {
 using triangle_t = vert_t;
 
 using HornetGraph = hornet::gpu::Hornet<vert_t>;
-// using HornetGraph = gpu::Hornet<vert_t>;
 
 
 
@@ -45,11 +44,6 @@ using HornetInit  = ::hornet::HornetInit<vert_t>;
 
 using UpdatePtr   = ::hornet::BatchUpdatePtr<vert_t, hornet::EMPTY, hornet::DeviceType::DEVICE>;
 using Update      = ::hornet::gpu::BatchUpdate<vert_t>;
-
-// using wgt0_t = int;
-
-// using Init = hornet::HornetInit<vert_t, hornet::EMPTY, hornet::TypeList<wgt0_t>>;
-// using KTrussHornet = hornet::gpu::Hornet<vert_t, hornet::EMPTY, hornet::TypeList<wgt0_t>>;
 
 
 struct KTrussData {
