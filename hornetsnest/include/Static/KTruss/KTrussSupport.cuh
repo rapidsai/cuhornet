@@ -318,8 +318,6 @@ void devicecuHornetKTruss(HornetDevice hornet,
         for(int k = adj_offset; k < srcLen; k += number_blocks) {
             vert_t dest = vertex.edge(k).dst_id();
             degree_t destLen = hornet.vertex(dest).degree();
-            // if (dest < src) //opt
-            //     continue;   //opt
 
             bool avoidCalc = (src == dest) || (destLen < 2) || (srcLen < 2);
             if (avoidCalc)
@@ -343,11 +341,6 @@ void devicecuHornetKTruss(HornetDevice hornet,
 
             int pos = hd_data().offset_array[src] + k;
             atomicAdd(hd_data().triangles_per_edge + pos,triFound);
-
-
-            // atomicAdd(outPutTriangles+src,triFound);
-            // atomicAdd(outPutTriangles+dest,triFound);
-
         }
     }
 }
