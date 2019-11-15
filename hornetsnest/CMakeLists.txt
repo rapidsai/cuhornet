@@ -54,7 +54,6 @@ add_executable(ktruss       test/KTrussTest.cu)
 add_executable(triangle2    test/TriangleTest2.cu)
 add_executable(clus-coeff   test/ClusCoeffTest.cu)
 add_executable(pr           test/PageRankTest.cu)
-add_executable(bcMulti      test/BCMultiTest.cu)
 
 
 target_link_libraries(dummy         hornetAlg)
@@ -72,5 +71,4 @@ target_link_libraries(ktruss        hornetAlg)
 target_link_libraries(triangle2     hornetAlg)
 target_link_libraries(clus-coeff    hornetAlg)
 target_link_libraries(pr            hornetAlg)
-target_link_libraries(bcMulti       hornetAlg)
 
