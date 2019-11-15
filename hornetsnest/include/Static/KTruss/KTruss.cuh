@@ -113,8 +113,6 @@ private:
     vert_t originalNV;
 };
 
-#define CHECK_ERROR(str) \
-    {cudaError_t err; err = cudaGetLastError(); if(err!=0) {printf("ERROR %s:  %d %s\n", str, err, cudaGetErrorString(err)); fflush(stdout); exit(0);}}
 
 } // namespace hornets_nest
 
