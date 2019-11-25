@@ -33,6 +33,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * </blockquote>}
  */
+
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
 namespace hornet {
 
 //==============================================================================
@@ -267,7 +271,7 @@ struct RecursiveGather {
         const degree_t nE) {
         if (N >= SIZE) { return; }
         thrust::gather(
-                thrust::device,
+                rmm::exec_policy(0)->on(0),
                 map.begin(), map.begin() + nE,
                 src.template get<N>(),
                 dst.template get<N>());
@@ -583,11 +587,11 @@ template <template <typename...> typename Ptr, typename degree_t, typename... Ed
 void
 sort_edges(Ptr<EdgeTypes...> ptr, const degree_t nE) {
     thrust::sort_by_key(
-            thrust::device,
+            rmm::exec_policy(0)->on(0),
             ptr.template get<1>(), ptr.template get<1>() + nE,
             ptr.template get<0>());
     thrust::sort_by_key(
-            thrust::device,
+            rmm::exec_policy(0)->on(0),
             ptr.template get<0>(), ptr.template get<0>() + nE,
             ptr.template get<1>());
 }
@@ -605,11 +609,11 @@ typename std::enable_if<(3 == sizeof...(EdgeTypes)), bool>::type
 sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, thrust::device_vector<degree_t>& range,
         Ptr<EdgeTypes...> out_ptr) {
     thrust::sort_by_key(
-            thrust::device,
+            rmm::exec_policy(0)->on(0),
             in_ptr.template get<1>(), in_ptr.template get<1>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<0>(), in_ptr.template get<2>())) );
     thrust::sort_by_key(
-            thrust::device,
+            rmm::exec_policy(0)->on(0),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), in_ptr.template get<2>())) );
     return false;
@@ -622,11 +626,11 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, thrust::device_vector<de
     range.resize(nE);
     thrust::sequence(range.begin(), range.end());
     thrust::sort_by_key(
-            thrust::device,
+            rmm::exec_policy(0)->on(0),
             in_ptr.template get<1>(), in_ptr.template get<1>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<0>(), range.begin())) );
     thrust::sort_by_key(
-            thrust::device,
+            rmm::exec_policy(0)->on(0),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), range.begin())) );
     RecursiveCopy<0, 2>::copy(in_ptr, DeviceType::DEVICE, out_ptr, DeviceType::DEVICE, nE);
