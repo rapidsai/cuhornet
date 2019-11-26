@@ -37,6 +37,7 @@
 #include <rmm/thrust_rmm_allocator.h>
 
 using namespace std;
+using namespace rmm;
 
 namespace hornets_nest {
 
@@ -139,6 +140,8 @@ void KTruss::release() {
     gpu::free(hd_data().triangles_per_vertex);
     gpu::free(hd_data().counter);
     gpu::free(hd_data().active_vertices);
+    gpu::free(hd_data().src);
+    gpu::free(hd_data().dst);
 
     hd_data().is_active            = nullptr;
     hd_data().offset_array         = nullptr;
@@ -146,6 +149,8 @@ void KTruss::release() {
     hd_data().triangles_per_vertex = nullptr;
     hd_data().counter              = nullptr;
     hd_data().active_vertices      = nullptr;
+    hd_data().src                  = nullptr;
+    hd_data().dst                  = nullptr;
 
 }
 
