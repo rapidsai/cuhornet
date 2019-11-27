@@ -1,5 +1,11 @@
 #include "../Conf/EdgeOperations.cuh"
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
+
 template <typename HornetDeviceT, typename vid_t, typename degree_t>
 __global__
 void get_vertex_degrees_kernel(
@@ -16,8 +22,8 @@ void get_vertex_degrees_kernel(
 
 template <typename HornetDeviceT, typename vid_t, typename degree_t>
 void get_vertex_degrees(HornetDeviceT& hornet,
-        thrust::device_vector<vid_t>& vertex_ids,
-        thrust::device_vector<degree_t>& vertex_degrees) {
+        rmm::device_vector<vid_t>& vertex_ids,
+        rmm::device_vector<degree_t>& vertex_degrees) {
     const unsigned BLOCK_SIZE = 128;
     get_vertex_degrees_kernel
         <<< xlib::ceil_div<BLOCK_SIZE>(vertex_ids.size()), BLOCK_SIZE >>>
@@ -96,12 +102,12 @@ void markOverwriteSrcDstKernel(
 template <typename HornetDeviceT, typename vid_t, typename degree_t, typename SoAPtrT>
 void mark_duplicate_edges(
         HornetDeviceT& hornet,
-        thrust::device_vector<vid_t>& vertex_ids,
+        rmm::device_vector<vid_t>& vertex_ids,
         //const vid_t * batch_dst_ids,
         SoAPtrT batch_edges,
-        thrust::device_vector<degree_t>& batch_offsets,
-        thrust::device_vector<degree_t>& graph_offsets,
-        thrust::device_vector<degree_t>& duplicate_flag,
+        rmm::device_vector<degree_t>& batch_offsets,
+        rmm::device_vector<degree_t>& graph_offsets,
+        rmm::device_vector<degree_t>& duplicate_flag,
         const degree_t total_work) {
     const unsigned BLOCK_SIZE = 128;
     int smem = xlib::DeviceProperty::smem_per_block<degree_t>(BLOCK_SIZE);
@@ -137,7 +143,7 @@ template <typename CSoADataT, typename degree_t>
 void write_unique_edges(
         CSoADataT& in,
         CSoADataT& out,
-        thrust::device_vector<degree_t>& offsets) {
+        rmm::device_vector<degree_t>& offsets) {
     auto in_ptr = in.get_soa_ptr();
     auto out_ptr = out.get_soa_ptr();
     const unsigned BLOCK_SIZE = 128;
@@ -304,13 +310,13 @@ void locate_erased_edges_kernel(
 template <typename HornetDeviceT, typename vid_t, typename degree_t>
 void locate_erased_edges(
         HornetDeviceT& hornet,
-        thrust::device_vector<vid_t>& unique_sources,
+        rmm::device_vector<vid_t>& unique_sources,
         const vid_t * batch_dst_ids,
-        thrust::device_vector<degree_t>& batch_src_offsets,
-        thrust::device_vector<degree_t>& batch_dst_degrees,
-        thrust::device_vector<degree_t>& graph_offsets,
-        thrust::device_vector<degree_t>& batch_erase_flag,
-        thrust::device_vector<degree_t>& erase_edge_location,
+        rmm::device_vector<degree_t>& batch_src_offsets,
+        rmm::device_vector<degree_t>& batch_dst_degrees,
+        rmm::device_vector<degree_t>& graph_offsets,
+        rmm::device_vector<degree_t>& batch_erase_flag,
+        rmm::device_vector<degree_t>& erase_edge_location,
         const degree_t total_work) {
     const unsigned BLOCK_SIZE = 128;
     int smem = xlib::DeviceProperty::smem_per_block<degree_t>(BLOCK_SIZE);
@@ -376,8 +382,8 @@ void markUniqueOffsets(
         vid_t * batch_src,
         vid_t * batch_dst,
         const degree_t nE,
-        thrust::device_vector<degree_t>& offsets,
-        thrust::device_vector<degree_t>& edge_count,
+        rmm::device_vector<degree_t>& offsets,
+        rmm::device_vector<degree_t>& edge_count,
         xlib::CubInclusiveMax<degree_t>& cub_prefixmax) {
     offsets.resize(nE);
     edge_count.resize(nE);
@@ -416,7 +422,7 @@ void print_arr(thrust::device_ptr<T> d, int count, std::string name) {
 }
 
 template <typename T>
-void print_arr(thrust::device_vector<T>& d, std::string name) {
+void print_arr(rmm::device_vector<T>& d, std::string name) {
   std::cout<<"\n"<<name<<" : ";
   thrust::copy(d.begin(), d.end(), std::ostream_iterator<T>(std::cout, " "));
 }
@@ -424,9 +430,9 @@ void print_arr(thrust::device_vector<T>& d, std::string name) {
 template <typename HornetDeviceT, typename vid_t, typename degree_t>
 void overwriteDeletedEdges(
         HornetDeviceT& hornet,
-        thrust::device_vector<vid_t>& sources,
-        thrust::device_vector<degree_t>& dst_offsets,
-        thrust::device_vector<degree_t>& src_offsets) {
+        rmm::device_vector<vid_t>& sources,
+        rmm::device_vector<degree_t>& dst_offsets,
+        rmm::device_vector<degree_t>& src_offsets) {
     const unsigned BLOCK_SIZE = 128;
     overwriteDeletedEdgesKernel<<<xlib::ceil_div<BLOCK_SIZE>(sources.size()), BLOCK_SIZE>>>(
             hornet,

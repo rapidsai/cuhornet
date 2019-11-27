@@ -37,15 +37,16 @@
 
 #include <rmm/rmm.h>
 #include <rmm/thrust_rmm_allocator.h>
+using namespace rmm;
 
 template <typename T>
-void print_vec(thrust::device_vector<T>& vec) {
+void print_vec(rmm::device_vector<T>& vec) {
         thrust::copy(vec.begin(), vec.end(), std::ostream_iterator<T>(std::cout, " "));
         std::cout<<"\n";
 }
 
 template <typename T>
-void print_vec(thrust::device_vector<T>& d, std::string name) {
+void print_vec(rmm::device_vector<T>& d, std::string name) {
   std::cout<<"\n"<<name<<" : ";
   thrust::copy(d.begin(), d.end(), std::ostream_iterator<T>(std::cout, " "));
   std::cout<<"\n";
@@ -204,7 +205,7 @@ out_edge(void) noexcept {
 
 template <typename... EdgeMetaTypes,
     typename vid_t, typename degree_t>
-thrust::device_vector<vid_t>&
+rmm::device_vector<vid_t>&
 BATCH_UPDATE::
 in_range(void) noexcept {
     return range[current_edge];
@@ -212,7 +213,7 @@ in_range(void) noexcept {
 
 template <typename... EdgeMetaTypes,
     typename vid_t, typename degree_t>
-thrust::device_vector<vid_t>&
+rmm::device_vector<vid_t>&
 BATCH_UPDATE::
 out_range(void) noexcept {
     return range[!current_edge];
@@ -257,8 +258,8 @@ remove_duplicates_edges_only(
         CSoAPtr<EdgeTypes...> in_ptr,
         CSoAPtr<EdgeTypes...> out_ptr,
         degree_t& nE,
-        thrust::device_vector<degree_t>& range,
-        thrust::device_vector<degree_t>& range_copy) {
+        rmm::device_vector<degree_t>& range,
+        rmm::device_vector<degree_t>& range_copy) {
     auto begin_in_tuple = thrust::make_zip_iterator(thrust::make_tuple(
                 in_ptr.template get<0>(), in_ptr.template get<1>()));
     auto begin_out_tuple = thrust::make_zip_iterator(thrust::make_tuple(
@@ -281,8 +282,8 @@ remove_duplicates(
         CSoAPtr<EdgeTypes...> in_ptr,
         CSoAPtr<EdgeTypes...> out_ptr,
         degree_t& nE,
-        thrust::device_vector<degree_t>& range,
-        thrust::device_vector<degree_t>& range_copy) {
+        rmm::device_vector<degree_t>& range,
+        rmm::device_vector<degree_t>& range_copy) {
     remove_duplicates_edges_only(in_ptr, out_ptr, nE, range, range_copy);
 }
 
@@ -293,8 +294,8 @@ remove_duplicates(
         CSoAPtr<EdgeTypes...> in_ptr,
         CSoAPtr<EdgeTypes...> out_ptr,
         degree_t& nE,
-        thrust::device_vector<degree_t>& range,
-        thrust::device_vector<degree_t>& range_copy) {
+        rmm::device_vector<degree_t>& range,
+        rmm::device_vector<degree_t>& range_copy) {
     auto begin_in_tuple = thrust::make_zip_iterator(thrust::make_tuple(
                 in_ptr.template get<0>(), in_ptr.template get<1>(), in_ptr.template get<2>()));
     auto begin_out_tuple = thrust::make_zip_iterator(thrust::make_tuple(
@@ -317,8 +318,8 @@ remove_duplicates(
         CSoAPtr<EdgeTypes...> in_ptr,
         CSoAPtr<EdgeTypes...> out_ptr,
         degree_t& nE,
-        thrust::device_vector<degree_t>& range,
-        thrust::device_vector<degree_t>& range_copy) {
+        rmm::device_vector<degree_t>& range,
+        rmm::device_vector<degree_t>& range_copy) {
     range.resize(nE);
     range_copy.resize(nE);
     thrust::sequence(range.begin(), range.end());
@@ -402,10 +403,10 @@ BATCH_UPDATE::
 get_unique_sources_meta_data(
         vid_t * const batch_src,
         const degree_t nE,
-        thrust::device_vector<vid_t>& unique_sources,
-        thrust::device_vector<degree_t>& unique_degrees,
-        thrust::device_vector<degree_t>& batch_offsets,
-        thrust::device_vector<degree_t>& graph_offsets,
+        rmm::device_vector<vid_t>& unique_sources,
+        rmm::device_vector<degree_t>& unique_degrees,
+        rmm::device_vector<degree_t>& batch_offsets,
+        rmm::device_vector<degree_t>& graph_offsets,
         hornet::HornetDevice<TypeList<VertexMetaTypes...>, TypeList<EdgeMetaTypes...>, vid_t, degree_t>& hornet_device) noexcept {
 
     unique_sources.resize(_nE);
@@ -445,11 +446,11 @@ get_unique_sources_meta_data_erase(
         vid_t * const batch_src,
         vid_t * const batch_dst,
         const degree_t nE,
-        thrust::device_vector<vid_t>& unique_sources,
-        thrust::device_vector<degree_t>& batch_src_offsets,
-        thrust::device_vector<degree_t>& batch_dst_offsets,
-        thrust::device_vector<degree_t>& batch_dst_degrees,
-        thrust::device_vector<degree_t>& graph_offsets,
+        rmm::device_vector<vid_t>& unique_sources,
+        rmm::device_vector<degree_t>& batch_src_offsets,
+        rmm::device_vector<degree_t>& batch_dst_offsets,
+        rmm::device_vector<degree_t>& batch_dst_degrees,
+        rmm::device_vector<degree_t>& graph_offsets,
         hornet::HornetDevice<TypeList<VertexMetaTypes...>, TypeList<EdgeMetaTypes...>, vid_t, degree_t>& hornet_device) noexcept {
 
     ////DESTINATION BATCH DEGREES
@@ -532,15 +533,15 @@ template <typename... VertexMetaTypes>
 void
 BATCH_UPDATE::
 overWriteEdges(hornet::HornetDevice<TypeList<VertexMetaTypes...>, TypeList<EdgeMetaTypes...>, vid_t, degree_t>& hornet_device) noexcept {
-    thrust::device_vector<degree_t>& destination_edges = range[1];//reuse
-    thrust::device_vector<degree_t>& destination_edges_flag = range[0];
-    thrust::device_vector<degree_t>& source_edges_flag = duplicate_flag;
-    thrust::device_vector<degree_t>& source_edges_offset = graph_offsets;
+    rmm::device_vector<degree_t>& destination_edges = range[1];//reuse
+    rmm::device_vector<degree_t>& destination_edges_flag = range[0];
+    rmm::device_vector<degree_t>& source_edges_flag = duplicate_flag;
+    rmm::device_vector<degree_t>& source_edges_offset = graph_offsets;
 
     auto in_ptr = in_edge().get_soa_ptr();
     vid_t * batch_src = in_ptr.template get<0>();
 
-    thrust::device_vector<degree_t>& batch_src_degrees = unique_degrees;
+    rmm::device_vector<degree_t>& batch_src_degrees = unique_degrees;
     unique_sources.resize(_nE);
     batch_src_degrees.resize(_nE);
     degree_t unique_sources_count = cub_runlength.run(batch_src, _nE,
@@ -577,15 +578,15 @@ BATCH_UPDATE::
 markOverwriteSrcDst(
         hornet::HornetDevice<TypeList<VertexMetaTypes...>, TypeList<EdgeMetaTypes...>, vid_t, degree_t>& hornet_device,
         vid_t * batch_src,
-        thrust::device_vector<vid_t> &unique_sources,
-        thrust::device_vector<degree_t>& batch_src_degrees,
-        thrust::device_vector<degree_t>& destination_edges,
-        thrust::device_vector<degree_t>& destination_edges_flag,
-        thrust::device_vector<degree_t>& source_edges_flag,
-        thrust::device_vector<degree_t>& source_edges_offset
+        rmm::device_vector<vid_t> &unique_sources,
+        rmm::device_vector<degree_t>& batch_src_degrees,
+        rmm::device_vector<degree_t>& destination_edges,
+        rmm::device_vector<degree_t>& destination_edges_flag,
+        rmm::device_vector<degree_t>& source_edges_flag,
+        rmm::device_vector<degree_t>& source_edges_offset
         ) noexcept {
 
-    thrust::device_vector<degree_t>& batch_src_offsets = batch_offsets;
+    rmm::device_vector<degree_t>& batch_src_offsets = batch_offsets;
     batch_src_offsets.resize(batch_src_degrees.size() + 1);
     thrust::copy(batch_src_degrees.begin(), batch_src_degrees.end(), batch_src_offsets.begin());
     cub_prefixsum.run(batch_src_offsets.data().get(), batch_src_degrees.size() + 1);
@@ -650,9 +651,9 @@ locateEdgesToBeErased(
     auto in_ptr = in_edge().get_soa_ptr();
     vid_t * batch_src = in_ptr.template get<0>();
     vid_t * batch_dst = in_ptr.template get<1>();
-    thrust::device_vector<degree_t>& batch_src_offsets = batch_offsets;
-    thrust::device_vector<degree_t>& batch_dst_offsets = unique_degrees;
-    thrust::device_vector<degree_t>& batch_dst_degrees  = duplicate_flag;
+    rmm::device_vector<degree_t>& batch_src_offsets = batch_offsets;
+    rmm::device_vector<degree_t>& batch_dst_offsets = unique_degrees;
+    rmm::device_vector<degree_t>& batch_dst_degrees  = duplicate_flag;
 
     degree_t total_work =
         get_unique_sources_meta_data_erase(
@@ -665,8 +666,8 @@ locateEdgesToBeErased(
                 hornet_device);
     if (total_work == 0) { return; }
 
-    thrust::device_vector<degree_t>& erase_edge_location = range[0];//reuse
-    thrust::device_vector<degree_t>& batch_erase_flag = unique_degrees;//reuse
+    rmm::device_vector<degree_t>& erase_edge_location = range[0];//reuse
+    rmm::device_vector<degree_t>& batch_erase_flag = unique_degrees;//reuse
     locate_erased_edges(hornet_device,
             unique_sources,
             batch_dst,
@@ -681,7 +682,7 @@ locateEdgesToBeErased(
     auto out_ptr = out_edge().get_soa_ptr();
     vid_t * batch_src_out = out_ptr.template get<0>();
 
-    thrust::device_vector<degree_t>& destination_edges = range[1];//reuse
+    rmm::device_vector<degree_t>& destination_edges = range[1];//reuse
     //realloc_sources.resize(_nE);
     destination_edges.resize(_nE);
     auto ptr_tuple = thrust::make_zip_iterator(thrust::make_tuple(
@@ -862,8 +863,8 @@ BATCH_UPDATE::
 print(bool sort) noexcept {
     auto ptr = in_edge().get_soa_ptr();
     std::cout<<"src, dst : "<<size()<<"\n";
-    thrust::device_vector<vid_t> src(size());
-    thrust::device_vector<vid_t> dst(size());
+    rmm::device_vector<vid_t> src(size());
+    rmm::device_vector<vid_t> dst(size());
     thrust::copy(ptr.template get<0>(), ptr.template get<0>() + size(), src.begin());
     thrust::copy(ptr.template get<1>(), ptr.template get<1>() + size(), dst.begin());
     if (!sort) {

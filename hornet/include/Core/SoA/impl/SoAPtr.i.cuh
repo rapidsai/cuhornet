@@ -37,6 +37,9 @@
 #include <rmm/rmm.h>
 #include <rmm/thrust_rmm_allocator.h>
 
+using namespace rmm;
+
+
 namespace hornet {
 
 //==============================================================================
@@ -267,7 +270,7 @@ struct RecursiveGather {
     }
     template<typename degree_t, typename Ptr>
     static void assign(Ptr src, Ptr dst,
-        const thrust::device_vector<degree_t>& map,
+        const rmm::device_vector<degree_t>& map,
         const degree_t nE) {
         if (N >= SIZE) { return; }
         thrust::gather(
@@ -287,7 +290,7 @@ struct RecursiveGather<N, N> {
         const degree_t nE) { }
     template<typename degree_t, typename Ptr>
     static void assign(Ptr src, Ptr dst,
-        const thrust::device_vector<degree_t>& map,
+        const rmm::device_vector<degree_t>& map,
         const degree_t nE) { }
 };
 
@@ -598,7 +601,7 @@ sort_edges(Ptr<EdgeTypes...> ptr, const degree_t nE) {
 
 template <template <typename...> typename Ptr, typename degree_t, typename... EdgeTypes>
 typename std::enable_if<(2 == sizeof...(EdgeTypes)), bool>::type
-sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, thrust::device_vector<degree_t>& range,
+sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degree_t>& range,
         Ptr<EdgeTypes...> out_ptr) {
     sort_edges(in_ptr, nE);
     return false;
@@ -606,7 +609,7 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, thrust::device_vector<de
 
 template <template <typename...> typename Ptr, typename degree_t, typename... EdgeTypes>
 typename std::enable_if<(3 == sizeof...(EdgeTypes)), bool>::type
-sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, thrust::device_vector<degree_t>& range,
+sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degree_t>& range,
         Ptr<EdgeTypes...> out_ptr) {
     thrust::sort_by_key(
             rmm::exec_policy(0)->on(0),
@@ -621,7 +624,7 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, thrust::device_vector<de
 
 template <template <typename...> typename Ptr, typename degree_t, typename... EdgeTypes>
 typename std::enable_if<(3 < sizeof...(EdgeTypes)), bool>::type
-sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, thrust::device_vector<degree_t>& range,
+sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degree_t>& range,
         Ptr<EdgeTypes...> out_ptr) {
     range.resize(nE);
     thrust::sequence(range.begin(), range.end());
