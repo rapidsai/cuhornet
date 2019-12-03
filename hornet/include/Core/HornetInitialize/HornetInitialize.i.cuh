@@ -35,6 +35,11 @@
  */
 #include "../SoA/SoAData.cuh"
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
 namespace hornet {
 namespace gpu {
 
@@ -160,7 +165,7 @@ print(void) {
         degree_t v_degree = ptr[i].template get<0>();
         std::cerr<<i<<" : "<<v_degree<<" | ";
         if (v_degree != 0) {
-          thrust::device_vector<degree_t> dst(v_degree);
+          rmm::device_vector<degree_t> dst(v_degree);
           vid_t * dst_ptr = reinterpret_cast<vid_t*>(ptr[i].template get<1>()) + ptr[i].template get<2>();
           thrust::copy(dst_ptr, dst_ptr + v_degree, dst.begin());
           thrust::copy(dst.begin(), dst.end(), std::ostream_iterator<vid_t>(std::cerr, " "));

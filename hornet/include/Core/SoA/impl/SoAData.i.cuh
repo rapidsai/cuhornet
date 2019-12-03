@@ -34,6 +34,11 @@
  * </blockquote>}
  */
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
 namespace hornet {
 
 //==============================================================================
@@ -403,7 +408,7 @@ template<typename... Ts, DeviceType device_t>
 void
 SoAData<TypeList<Ts...>, device_t>::
 sort(void) noexcept {
-  thrust::device_vector<int> range;
+  rmm::device_vector<int> range;
   if (sizeof...(Ts) > 3) {
     SoAPtr<Ts...> temp_soa;
     RecursiveAllocate<0, sizeof...(Ts) - 1, device_t>::allocate(temp_soa, _num_items);
