@@ -273,8 +273,9 @@ struct RecursiveGather {
         const rmm::device_vector<degree_t>& map,
         const degree_t nE) {
         if (N >= SIZE) { return; }
+        cudaStream_t stream{nullptr};
         thrust::gather(
-                rmm::exec_policy(0)->on(0),
+                rmm::exec_policy(stream)->on(stream),
                 map.begin(), map.begin() + nE,
                 src.template get<N>(),
                 dst.template get<N>());
@@ -589,12 +590,14 @@ operator[](const int& index)  noexcept {
 template <template <typename...> typename Ptr, typename degree_t, typename... EdgeTypes>
 void
 sort_edges(Ptr<EdgeTypes...> ptr, const degree_t nE) {
+    cudaStream_t stream{nullptr};
+    
     thrust::sort_by_key(
-            rmm::exec_policy(0)->on(0),
+            rmm::exec_policy(stream)->on(stream),
             ptr.template get<1>(), ptr.template get<1>() + nE,
             ptr.template get<0>());
     thrust::sort_by_key(
-            rmm::exec_policy(0)->on(0),
+            rmm::exec_policy(stream)->on(stream),
             ptr.template get<0>(), ptr.template get<0>() + nE,
             ptr.template get<1>());
 }
@@ -611,12 +614,14 @@ template <template <typename...> typename Ptr, typename degree_t, typename... Ed
 typename std::enable_if<(3 == sizeof...(EdgeTypes)), bool>::type
 sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degree_t>& range,
         Ptr<EdgeTypes...> out_ptr) {
+    cudaStream_t stream{nullptr};
+
     thrust::sort_by_key(
-            rmm::exec_policy(0)->on(0),
+            rmm::exec_policy(stream)->on(stream),
             in_ptr.template get<1>(), in_ptr.template get<1>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<0>(), in_ptr.template get<2>())) );
     thrust::sort_by_key(
-            rmm::exec_policy(0)->on(0),
+            rmm::exec_policy(stream)->on(stream),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), in_ptr.template get<2>())) );
     return false;
@@ -628,12 +633,14 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degre
         Ptr<EdgeTypes...> out_ptr) {
     range.resize(nE);
     thrust::sequence(range.begin(), range.end());
+    cudaStream_t stream{nullptr};
+
     thrust::sort_by_key(
-            rmm::exec_policy(0)->on(0),
+            rmm::exec_policy(stream)->on(stream),
             in_ptr.template get<1>(), in_ptr.template get<1>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<0>(), range.begin())) );
     thrust::sort_by_key(
-            rmm::exec_policy(0)->on(0),
+            rmm::exec_policy(stream)->on(stream),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), range.begin())) );
     RecursiveCopy<0, 2>::copy(in_ptr, DeviceType::DEVICE, out_ptr, DeviceType::DEVICE, nE);

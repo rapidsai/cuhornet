@@ -119,7 +119,8 @@ vid_t
 HORNETSTATIC::
 max_degree_id() const noexcept {
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-    auto* iter = thrust::max_element(rmm::exec_policy(0)->on(0), start_ptr, start_ptr + _nV);
+    cudaStream_t stream{nullptr};    
+    auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
     if (iter == start_ptr + _nV) {
         return static_cast<vid_t>(-1);
     } else {
@@ -132,7 +133,9 @@ degree_t
 HORNETSTATIC::
 max_degree() const noexcept {
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-    auto* iter = thrust::max_element(rmm::exec_policy(0)->on(0), start_ptr, start_ptr + _nV);
+    cudaStream_t stream{nullptr};
+
+    auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
     if (iter == start_ptr + _nV) {
         return static_cast<degree_t>(0);
     } else {

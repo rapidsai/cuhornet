@@ -18,7 +18,8 @@ namespace gpu {
   HORNET::
   max_degree_id() const noexcept {
       auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-      auto* iter = thrust::max_element(rmm::exec_policy(0)->on(0), start_ptr, start_ptr + _nV);
+      cudaStream_t stream{nullptr};
+      auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
       if (iter == start_ptr + _nV) {
           return static_cast<vid_t>(-1);
       } else {
@@ -31,7 +32,8 @@ namespace gpu {
   HORNET::
   max_degree() const noexcept {
       auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-      auto* iter = thrust::max_element(rmm::exec_policy(0)->on(0), start_ptr, start_ptr + _nV);
+      cudaStream_t stream{nullptr};
+      auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
       if (iter == start_ptr + _nV) {
           return static_cast<degree_t>(0);
       } else {
@@ -85,8 +87,10 @@ namespace gpu {
 
     rmm::device_vector<degree_t> offset(nV() + 1);
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-    thrust::copy(rmm::exec_policy(0)->on(0), start_ptr, start_ptr + _nV, offset.begin());
-    thrust::exclusive_scan(rmm::exec_policy(0)->on(0), offset.begin(), offset.end(), offset.begin());
+
+    cudaStream_t stream{nullptr};
+    thrust::copy(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV, offset.begin());
+    thrust::exclusive_scan(rmm::exec_policy(stream)->on(stream), offset.begin(), offset.end(), offset.begin());
 
     HornetDeviceT hornet_device = device();
     const int BLOCK_SIZE = 256;
@@ -131,8 +135,10 @@ namespace gpu {
 
     rmm::device_vector<degree_t> degree(nV() + 1);
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-    thrust::copy(rmm::exec_policy(0)->on(0), start_ptr, start_ptr + _nV, degree.begin());
-    thrust::exclusive_scan(rmm::exec_policy(0)->on(0), degree.begin(), degree.end(), degree.begin());
+    cudaStream_t stream{nullptr};
+
+    thrust::copy(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV, degree.begin());
+    thrust::exclusive_scan(rmm::exec_policy(stream)->on(stream), degree.begin(), degree.end(), degree.begin());
 
     HornetDeviceT hornet_device = device();
     const int BLOCK_SIZE = 256;

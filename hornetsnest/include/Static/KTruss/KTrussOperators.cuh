@@ -80,6 +80,8 @@ struct SimpleBubbleSort {
         vert_t src = vertex.id();
 
         degree_t size = vertex.degree();
+        if(size<=1)
+            return;
         for (vert_t i = 0; i < (size-1); i++) {
             vert_t min_idx=i;
 
