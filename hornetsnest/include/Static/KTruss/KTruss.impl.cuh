@@ -93,7 +93,8 @@ void KTruss::createOffSetArray(){
 
     forAllVertices(hornet, getVertexSizes {tempSize});
 
-    thrust::inclusive_scan(rmm::exec_policy(0)->on(0), tempSize, tempSize + originalNV, hd_data().offset_array+1);
+    cudaStream_t stream{nullptr};
+    thrust::inclusive_scan(rmm::exec_policy(stream)->on(stream), tempSize, tempSize + originalNV, hd_data().offset_array+1);
 
     gpu::free(tempSize);
 }
@@ -191,7 +192,6 @@ void KTruss::findTrussOfK() {
     while (h_active_vertices > 0) {
 
         hd_data().full_triangle_iterations++;
-
         kTrussOneIteration(hornet, hd_data().triangles_per_vertex,
                            hd_data().tsp, hd_data().nbl,
                            hd_data().shifter,
@@ -216,10 +216,10 @@ void KTruss::findTrussOfK() {
 
         // Resetting the number of active vertices before check
         cudaMemset(hd_data().active_vertices,0, sizeof(int));
+
         forAllVertices(hornet, CountActive { hd_data });
 
         sortHornet();
-
 
         // Getting the number of active vertices
         cudaMemcpy(&h_active_vertices, hd_data().active_vertices,sizeof(int),cudaMemcpyDeviceToHost);
@@ -228,7 +228,6 @@ void KTruss::findTrussOfK() {
         resetVertexArray();
 
         cudaMemset(hd_data().counter,0, sizeof(int));
-
     }
 }
 

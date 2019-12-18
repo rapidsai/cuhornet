@@ -264,9 +264,11 @@ remove_duplicates_edges_only(
                 in_ptr.template get<0>(), in_ptr.template get<1>()));
     auto begin_out_tuple = thrust::make_zip_iterator(thrust::make_tuple(
                 out_ptr.template get<0>(), out_ptr.template get<1>()));
+    
+    cudaStream_t stream{nullptr};
     auto end_ptr =
         thrust::unique_copy(
-                rmm::exec_policy(0)->on(0),
+                rmm::exec_policy(stream)->on(stream),
                 begin_in_tuple, begin_in_tuple + nE,
                 begin_out_tuple,
                 IsSrcDstEqual());
@@ -300,9 +302,10 @@ remove_duplicates(
                 in_ptr.template get<0>(), in_ptr.template get<1>(), in_ptr.template get<2>()));
     auto begin_out_tuple = thrust::make_zip_iterator(thrust::make_tuple(
                 out_ptr.template get<0>(), out_ptr.template get<1>(), out_ptr.template get<2>()));
+    cudaStream_t stream{nullptr};
     auto end_ptr =
         thrust::unique_copy(
-                rmm::exec_policy(0)->on(0),
+                rmm::exec_policy(stream)->on(stream),
                 begin_in_tuple, begin_in_tuple + nE,
                 begin_out_tuple,
                 IsSrcDstEqual());
@@ -327,9 +330,10 @@ remove_duplicates(
                 in_ptr.template get<0>(), in_ptr.template get<1>(), range.begin()));
     auto begin_out_tuple = thrust::make_zip_iterator(thrust::make_tuple(
                 out_ptr.template get<0>(), out_ptr.template get<1>(), range_copy.begin()));
+    cudaStream_t stream{nullptr};
     auto end_ptr =
         thrust::unique_copy(
-                rmm::exec_policy(0)->on(0),
+                rmm::exec_policy(stream)->on(stream),
                 begin_in_tuple, begin_in_tuple + nE,
                 begin_out_tuple,
                 IsSrcDstEqual());
@@ -690,7 +694,8 @@ locateEdgesToBeErased(
     auto out_ptr_tuple = thrust::make_zip_iterator(thrust::make_tuple(
                 batch_src_out, destination_edges.begin()));
                 //realloc_sources.begin(), destination_edges.begin()));
-    _nE = thrust::copy_if(rmm::exec_policy(0)->on(0),
+    cudaStream_t stream{nullptr};
+    _nE = thrust::copy_if(rmm::exec_policy(stream)->on(stream),
             ptr_tuple, ptr_tuple + _nE,
             batch_erase_flag.begin(),
             out_ptr_tuple,
