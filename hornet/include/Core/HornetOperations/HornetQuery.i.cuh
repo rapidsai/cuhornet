@@ -5,6 +5,12 @@
 #include <thrust/execution_policy.h>
 #include "../SoA/SoAData.cuh"
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
+
 namespace hornet {
 namespace gpu {
   template <typename... VertexMetaTypes, typename... EdgeMetaTypes, typename vid_t, typename degree_t>
@@ -12,7 +18,8 @@ namespace gpu {
   HORNET::
   max_degree_id() const noexcept {
       auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-      auto* iter = thrust::max_element(thrust::device, start_ptr, start_ptr + _nV);
+      cudaStream_t stream{nullptr};
+      auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
       if (iter == start_ptr + _nV) {
           return static_cast<vid_t>(-1);
       } else {
@@ -25,7 +32,8 @@ namespace gpu {
   HORNET::
   max_degree() const noexcept {
       auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-      auto* iter = thrust::max_element(thrust::device, start_ptr, start_ptr + _nV);
+      cudaStream_t stream{nullptr};
+      auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
       if (iter == start_ptr + _nV) {
           return static_cast<degree_t>(0);
       } else {
@@ -73,14 +81,16 @@ namespace gpu {
       return csr;
     }
 
-    thrust::device_vector<vid_t> temp_src(nE());
+    rmm::device_vector<vid_t> temp_src(nE());
     SoAData<TypeList<vid_t, EdgeMetaTypes...>, DeviceType::DEVICE> index(nE());
     SoAPtr<vid_t, vid_t, EdgeMetaTypes...> coo = concat(temp_src.data().get(), index.get_soa_ptr());
 
-    thrust::device_vector<degree_t> offset(nV() + 1);
+    rmm::device_vector<degree_t> offset(nV() + 1);
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-    thrust::copy(thrust::device, start_ptr, start_ptr + _nV, offset.begin());
-    thrust::exclusive_scan(thrust::device, offset.begin(), offset.end(), offset.begin());
+
+    cudaStream_t stream{nullptr};
+    thrust::copy(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV, offset.begin());
+    thrust::exclusive_scan(rmm::exec_policy(stream)->on(stream), offset.begin(), offset.end(), offset.begin());
 
     HornetDeviceT hornet_device = device();
     const int BLOCK_SIZE = 256;
@@ -91,10 +101,10 @@ namespace gpu {
     if (sortAdjacencyList) {
       //SoAData<TypeList<vid_t, vid_t, EdgeMetaTypes...>, DeviceType::DEVICE> out_coo_data(nE());
       SoAData<TypeList<vid_t, EdgeMetaTypes...>, DeviceType::DEVICE> out_index(nE());
-      thrust::device_vector<vid_t> temp_out_src(nE());
+      rmm::device_vector<vid_t> temp_out_src(nE());
       SoAPtr<vid_t, vid_t, EdgeMetaTypes...> out_coo = concat(temp_out_src.data().get(), out_index.get_soa_ptr());
 
-      thrust::device_vector<degree_t> range;
+      rmm::device_vector<degree_t> range;
       if (sort_batch(coo, nE(), range, out_coo)) {
         CSR<DeviceType::DEVICE, vid_t, TypeList<EdgeMetaTypes...>, degree_t> csr(std::move(offset), std::move(out_index));
         return csr;
@@ -123,10 +133,12 @@ namespace gpu {
 
     SoAData<TypeList<vid_t, vid_t, EdgeMetaTypes...>, DeviceType::DEVICE> coo_data(nE());
 
-    thrust::device_vector<degree_t> degree(nV() + 1);
+    rmm::device_vector<degree_t> degree(nV() + 1);
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-    thrust::copy(thrust::device, start_ptr, start_ptr + _nV, degree.begin());
-    thrust::exclusive_scan(thrust::device, degree.begin(), degree.end(), degree.begin());
+    cudaStream_t stream{nullptr};
+
+    thrust::copy(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV, degree.begin());
+    thrust::exclusive_scan(rmm::exec_policy(stream)->on(stream), degree.begin(), degree.end(), degree.begin());
 
     HornetDeviceT hornet_device = device();
     const int BLOCK_SIZE = 256;
@@ -136,7 +148,7 @@ namespace gpu {
 
     if (sortAdjacencyList) {
       SoAData<TypeList<vid_t, vid_t, EdgeMetaTypes...>, DeviceType::DEVICE> out_coo_data(nE());
-      thrust::device_vector<degree_t> range;
+      rmm::device_vector<degree_t> range;
       if (sort_batch(coo_data.get_soa_ptr(), nE(), range, out_coo_data.get_soa_ptr())) {
         COO<DeviceType::DEVICE, vid_t, TypeList<EdgeMetaTypes...>, degree_t> coo(std::move(out_coo_data));
         return coo;

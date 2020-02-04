@@ -44,6 +44,11 @@
 #include <thrust/gather.h>
 #include <vector>
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
 namespace hornet {
 
 template <typename, DeviceType = DeviceType::DEVICE> class SoAData;
@@ -63,7 +68,7 @@ class SoAData<TypeList<Ts...>, device_t> {
     using Map = typename
     std::conditional<
     (device_t == DeviceType::DEVICE),
-    typename thrust::device_vector<T>,
+    typename rmm::device_vector<T>,
     typename thrust::host_vector<T>>::type;
 
     SoAData(const int num_items = 0, bool initToZero = false) noexcept;

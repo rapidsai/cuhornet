@@ -50,6 +50,12 @@
 #include "BatchUpdateKernels.cuh"
 #include "../Static/Static.cuh"
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
+
 #define CUDA_TRY_CALL( call ) 									                            \
 {                                                                     \
     cudaError_t cudaStatus = call;                                    \
@@ -127,30 +133,30 @@ class BatchUpdate<
 
     bool current_edge;
 
-    thrust::device_vector<degree_t> range[2];
+    rmm::device_vector<degree_t> range[2];
 
-    thrust::device_vector<vid_t>    unique_sources;
-    thrust::device_vector<degree_t> unique_degrees;
-    thrust::device_vector<degree_t> duplicate_flag;
-    thrust::device_vector<degree_t>  batch_offsets;
-    thrust::device_vector<degree_t>  graph_offsets;
+    rmm::device_vector<vid_t>    unique_sources;
+    rmm::device_vector<degree_t> unique_degrees;
+    rmm::device_vector<degree_t> duplicate_flag;
+    rmm::device_vector<degree_t>  batch_offsets;
+    rmm::device_vector<degree_t>  graph_offsets;
 
     xlib::CubRunLengthEncode<vid_t>  cub_runlength;
     xlib::CubExclusiveSum<degree_t>  cub_prefixsum;
     xlib::CubInclusiveMax<degree_t>  cub_prefixmax;
 
-    thrust::device_vector<vid_t>   realloc_sources;
+    rmm::device_vector<vid_t>   realloc_sources;
 
     SoAData<TypeList<degree_t, xlib::byte_t*, degree_t, degree_t>, DeviceType::DEVICE> vertex_access[2];
     SoAData<TypeList<degree_t, xlib::byte_t*, degree_t, degree_t>, DeviceType::HOST> host_vertex_access[2];
 
-    thrust::device_vector<degree_t> realloc_sources_count_buffer;
+    rmm::device_vector<degree_t> realloc_sources_count_buffer;
 
     //Functions
 
-    thrust::device_vector<vid_t>& in_range() noexcept;
+    rmm::device_vector<vid_t>& in_range() noexcept;
 
-    thrust::device_vector<vid_t>& out_range() noexcept;
+    rmm::device_vector<vid_t>& out_range() noexcept;
 
     void flip_resource(void) noexcept;
 
@@ -162,10 +168,10 @@ class BatchUpdate<
     degree_t get_unique_sources_meta_data(
             vid_t * const batch_src,
             const degree_t nE,
-            thrust::device_vector<vid_t>& unique_sources,
-            thrust::device_vector<degree_t>& unique_degrees,
-            thrust::device_vector<degree_t>& batch_offsets,
-            thrust::device_vector<degree_t>& graph_offsets,
+            rmm::device_vector<vid_t>& unique_sources,
+            rmm::device_vector<degree_t>& unique_degrees,
+            rmm::device_vector<degree_t>& batch_offsets,
+            rmm::device_vector<degree_t>& graph_offsets,
             hornet::HornetDevice<TypeList<VertexMetaTypes...>, TypeList<EdgeMetaTypes...>, vid_t, degree_t>& hornet_device) noexcept;
 
     template <typename... VertexMetaTypes>
@@ -173,11 +179,11 @@ class BatchUpdate<
         vid_t * const batch_src,
         vid_t * const batch_dst,
         const degree_t nE,
-        thrust::device_vector<vid_t>& unique_sources,
-        thrust::device_vector<degree_t>& batch_src_offsets,
-        thrust::device_vector<degree_t>& batch_dst_offsets,
-        thrust::device_vector<degree_t>& batch_dst_degrees,
-        thrust::device_vector<degree_t>& graph_offsets,
+        rmm::device_vector<vid_t>& unique_sources,
+        rmm::device_vector<degree_t>& batch_src_offsets,
+        rmm::device_vector<degree_t>& batch_dst_offsets,
+        rmm::device_vector<degree_t>& batch_dst_degrees,
+        rmm::device_vector<degree_t>& graph_offsets,
         hornet::HornetDevice<TypeList<VertexMetaTypes...>, TypeList<EdgeMetaTypes...>, vid_t, degree_t>& hornet_device) noexcept;
 
     template <typename... VertexMetaTypes>
@@ -261,12 +267,12 @@ class BatchUpdate<
     void markOverwriteSrcDst(
         hornet::HornetDevice<TypeList<VertexMetaTypes...>, TypeList<EdgeMetaTypes...>, vid_t, degree_t>& hornet_device,
         vid_t * batch_src,
-        thrust::device_vector<vid_t> &unique_sources,
-        thrust::device_vector<degree_t>& batch_src_degrees,
-        thrust::device_vector<degree_t>& destination_edges,
-        thrust::device_vector<degree_t>& destination_edges_flag,
-        thrust::device_vector<degree_t>& source_edge_flag,
-        thrust::device_vector<degree_t>& source_edge_offset) noexcept;
+        rmm::device_vector<vid_t> &unique_sources,
+        rmm::device_vector<degree_t>& batch_src_degrees,
+        rmm::device_vector<degree_t>& destination_edges,
+        rmm::device_vector<degree_t>& destination_edges_flag,
+        rmm::device_vector<degree_t>& source_edge_flag,
+        rmm::device_vector<degree_t>& source_edge_offset) noexcept;
 
     degree_t nE(void) const noexcept;
 };
