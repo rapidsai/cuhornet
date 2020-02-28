@@ -145,6 +145,14 @@ struct DeviceProp<700> {
 };
 
 template<>
+struct DeviceProp<720> {
+    static const unsigned SMEM_PER_SM    = 98304;
+    static const unsigned RBLOCKS_PER_SM = 32;
+    static const unsigned arch = 720;
+    static const unsigned THREADS_PER_SM = 2048;
+};
+
+template<>
 struct DeviceProp<750> {
     static const unsigned SMEM_PER_SM    = 65536;
     static const unsigned RBLOCKS_PER_SM = 16;
