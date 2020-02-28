@@ -180,6 +180,18 @@ void KTruss::runForK(int max_K) {
     findTrussOfK();
 }
 
+int
+KTruss::getGraphEdgeCount(void) {
+  return hornet.nE();
+}
+
+void
+KTruss::copyGraph(vert_t * src, vert_t * dst) {
+    auto coo = hornet.getCOO(false);
+    cudaMemcpy(src, coo.srcPtr(), sizeof(vert_t)*coo.size(), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(dst, coo.dstPtr(), sizeof(vert_t)*coo.size(), cudaMemcpyDeviceToDevice);
+}
+
 void KTruss::findTrussOfK() {
     forAllVertices(hornet, Init { hd_data });
     resetEdgeArray();
@@ -207,12 +219,12 @@ void KTruss::findTrussOfK() {
               UpdatePtr ptr(h_counter, hd_data().src, hd_data().dst);
               Update batch_update(ptr);
               hornet.erase(batch_update);
+              hd_data().num_edges_remaining -= h_counter;
         }
         else{
             return;
         }
 
-        hd_data().num_edges_remaining -= h_counter;
 
         // Resetting the number of active vertices before check
         cudaMemset(hd_data().active_vertices,0, sizeof(int));
