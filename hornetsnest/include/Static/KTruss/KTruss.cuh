@@ -38,8 +38,6 @@ using triangle_t = vert_t;
 
 using HornetGraph = hornet::gpu::Hornet<vert_t>;
 
-
-
 using HornetInit  = ::hornet::HornetInit<vert_t>;
 
 using UpdatePtr   = ::hornet::BatchUpdatePtr<vert_t, hornet::EMPTY, hornet::DeviceType::DEVICE>;
@@ -94,6 +92,8 @@ public:
 
     void findTrussOfK();
     void runForK(int max_K);
+    int  getGraphEdgeCount(void);
+    void copyGraph(vert_t * src, vert_t * dst);
 
     void createOffSetArray();
     void copyOffsetArrayHost(const vert_t* host_offset_array);
@@ -112,7 +112,6 @@ private:
     vert_t originalNE;
     vert_t originalNV;
 };
-
 
 } // namespace hornets_nest
 
