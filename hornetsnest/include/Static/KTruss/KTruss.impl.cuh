@@ -32,6 +32,7 @@
 #include "Static/KTruss/KTrussSupport.cuh"
 
 #include <iostream>
+#include <Device/Util/Timer.cuh>
 
 #include <rmm/rmm.h>
 #include <rmm/thrust_rmm_allocator.h>
@@ -112,7 +113,7 @@ vert_t KTruss::getMaxK() {
 }
 
 void KTruss::sortHornet(){
-        forAllVertices(hornet, SimpleBubbleSort {});
+  hornet.sort();
 }
 
 //==============================================================================
@@ -203,35 +204,67 @@ void KTruss::findTrussOfK() {
 
     while (h_active_vertices > 0) {
 
+{
+timer::Timer<timer::DEVICE> TM;
+TM.start();
         hd_data().full_triangle_iterations++;
         kTrussOneIteration(hornet, hd_data().triangles_per_vertex,
                            hd_data().tsp, hd_data().nbl,
                            hd_data().shifter,
                            hd_data().blocks, hd_data().sps,
                            hd_data);
+    CHECK_CUDA_ERROR
 
+TM.stop();
+std::cerr<<"Duration kTrussOneIteration : "<<TM.duration()<<"\n";
+}
+
+      {
+        timer::Timer<timer::DEVICE> TM;
+TM.start();
+std::cerr<<"ERR 1\n";
         forAllVertices(hornet, FindUnderK { hd_data });
+std::cerr<<"ERR 2\n";
+    CHECK_CUDA_ERROR
 
+std::cerr<<"ERR 3\n";
         int h_counter;
         cudaMemcpy(&h_counter,hd_data().counter, sizeof(int),cudaMemcpyDeviceToHost);
+    CHECK_CUDA_ERROR
 
+std::cerr<<"ERR 4\n";
         if (h_counter != 0) {
+std::cerr<<"ERR 5\n";
               UpdatePtr ptr(h_counter, hd_data().src, hd_data().dst);
+std::cerr<<"ERR 6\n";
               Update batch_update(ptr);
+std::cerr<<"ERR 7\n";
               hornet.erase(batch_update);
+std::cerr<<"ERR 8\n";
               hd_data().num_edges_remaining -= h_counter;
+std::cerr<<"ERR 9\n";
+    CHECK_CUDA_ERROR
         }
         else{
             return;
         }
 
+TM.stop();
+std::cerr<<"Duration hornet.erase : "<<TM.duration()<<"\n";
+      }
 
         // Resetting the number of active vertices before check
         cudaMemset(hd_data().active_vertices,0, sizeof(int));
 
         forAllVertices(hornet, CountActive { hd_data });
 
+      {
+        timer::Timer<timer::DEVICE> TM;
+TM.start();
         sortHornet();
+TM.stop();
+std::cerr<<"Duration sort : "<<TM.duration()<<"\n";
+      }
 
         // Getting the number of active vertices
         cudaMemcpy(&h_active_vertices, hd_data().active_vertices,sizeof(int),cudaMemcpyDeviceToHost);

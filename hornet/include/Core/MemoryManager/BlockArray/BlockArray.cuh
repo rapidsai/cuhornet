@@ -54,7 +54,7 @@ class BlockArray<TypeList<Ts...>, device_t, degree_t> {
     template <typename, DeviceType, typename> friend class BlockArray;
 
     CSoAData<TypeList<Ts...>, device_t> _edge_data;
-    BitTree<degree_t>                   _bit_tree;
+    BitTree<degree_t>                    _bit_tree;
 
     public:
     BlockArray(const int block_items, const int blockarray_items) noexcept;
@@ -78,6 +78,8 @@ class BlockArray<TypeList<Ts...>, device_t, degree_t> {
     bool full(void) noexcept;
 
     CSoAData<TypeList<Ts...>, device_t>& get_soa_data(void) noexcept;
+
+    void sort(void);
 };
 
 template <typename degree_t>
@@ -120,6 +122,8 @@ class BlockArrayManager<TypeList<Ts...>, device_t, degree_t> {
     degree_t largest_edge_block_size(void) noexcept;
 
     void removeAll(void) noexcept;
+
+    void sort(void);
 };
 
 }

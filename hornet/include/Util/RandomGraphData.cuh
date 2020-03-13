@@ -162,7 +162,7 @@ template <DeviceType device_t, typename T>
 using Vector = typename
 std::conditional<
 (device_t == DeviceType::DEVICE),
-typename thrust::device_vector<T>,
+typename rmm::device_vector<T>,
 typename thrust::host_vector<T>>::type;
 
 template <typename... EdgeMetaTypes, typename vid_t, typename degree_t, DeviceType device_t>

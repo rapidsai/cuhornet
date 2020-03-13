@@ -643,6 +643,7 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degre
             rmm::exec_policy(stream)->on(stream),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), range.begin())) );
+    //FIXME : Check correctness of RecursiveCopy and RecursiveGather template parameters
     RecursiveCopy<0, 2>::copy(in_ptr, DeviceType::DEVICE, out_ptr, DeviceType::DEVICE, nE);
     RecursiveGather<2, sizeof...(EdgeTypes)>::assign(in_ptr, out_ptr, range, nE);
     return true;
