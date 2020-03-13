@@ -357,7 +357,6 @@ void kTrussOneIteration(HornetGraph& hornet,
                         int thread_blocks,
                         int blockdim,
                         HostDeviceVar<KTrussData>& hd_data) {
-  std::cerr<<"hornet.nE() "<<hornet.nE()<<"\n";
     devicecuHornetKTruss <<< thread_blocks, blockdim >>>
         (hornet.device(), output_triangles, threads_per_block,
          number_blocks, shifter, hd_data);

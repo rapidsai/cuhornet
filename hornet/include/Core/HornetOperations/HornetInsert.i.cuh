@@ -48,7 +48,6 @@ reallocate_vertices(gpu::BatchUpdate<vid_t, TypeList<EdgeMetaTypes...>, degree_t
             hornet_device, h_realloc_v_data, h_new_v_data, d_realloc_v_data, d_new_v_data, reallocated_vertices_count, is_insert);
 
     PEEK_LAST_STATUS()
-    std::cerr<<"REALLOCATE ERR 0\n";
     for (degree_t i = 0; i < reallocated_vertices_count; i++) {
         auto ref = h_new_v_data[i];
         auto access_data = _ba_manager.insert(ref.template get<0>());
@@ -56,25 +55,17 @@ reallocate_vertices(gpu::BatchUpdate<vid_t, TypeList<EdgeMetaTypes...>, degree_t
         ref.template get<2>() = access_data.vertex_offset;
         ref.template get<3>() = access_data.edges_per_block;
     }
-    std::cerr<<"REALLOCATE ERR 1\n";
 
     ////Move adjacency list and edit vertex access data
     batch.move_adjacency_lists(hornet_device, _vertex_data.get_soa_ptr(), h_realloc_v_data, h_new_v_data, d_realloc_v_data, d_new_v_data, reallocated_vertices_count, is_insert);
 
-    std::cerr<<"REALLOCATE ERR 2\n";
-    std::cerr<<"reallocated_vertices_count "<<reallocated_vertices_count<<"\n";
     PEEK_LAST_STATUS()
     for (degree_t i = 0; i < reallocated_vertices_count; i++) {
         auto ref = h_realloc_v_data[i];
         if (ref.template get<0>() != 0) {
-          try {
           _ba_manager.remove(ref.template get<0>(), ref.template get<1>(), ref.template get<2>());
-          } catch (std::exception& e) {
-            exit(1);
-          }
         }
     }
-    std::cerr<<"REALLOCATE ERR 3\n";
     PEEK_LAST_STATUS()
 
 }
@@ -88,16 +79,12 @@ erase(gpu::BatchUpdate<vid_t, TypeList<EdgeMetaTypes...>, degree_t>& batch, bool
     //Preprocess batch according to user preference
     //std::cout<<"\nBEFORE DELETE\n";
     //print();
-std::cerr<<"ERR erase 0\n";
     batch.preprocess_erase(hornet_device, removeBatchDuplicates);
-std::cerr<<"ERR erase 1\n";
     CHECK_CUDA_ERROR
     _nE = _nE - batch.nE();
     //std::cout<<"\nBEFORE REALLOCATE\n";
     //print();
-std::cerr<<"ERR erase 2\n";
     reallocate_vertices(batch, false);
-std::cerr<<"ERR erase 3\n";
     CHECK_CUDA_ERROR
     //std::cout<<"\nAFTER REALLOCATE\n";
     //print();
