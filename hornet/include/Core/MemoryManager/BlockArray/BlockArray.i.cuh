@@ -106,6 +106,13 @@ get_soa_data(void) noexcept {
     return _edge_data;
 }
 
+template<typename... Ts, DeviceType device_t, typename degree_t>
+void
+BLOCK_ARRAY::
+sort(void) {
+  _edge_data.segmented_sort(_bit_tree.get_log_block_items());
+}
+
 //==============================================================================
 
 template <typename degree_t>
@@ -188,6 +195,17 @@ void
 B_A_MANAGER::
 removeAll(void) noexcept {
   for (auto &b : _ba_map) { b.clear(); }
+}
+
+template<typename... Ts, DeviceType device_t, typename degree_t>
+void
+B_A_MANAGER::
+sort(void) {
+  for (unsigned i = 0; i < _ba_map.size(); ++i) {
+    for (auto &b : _ba_map[i]) {
+      b.second.sort();
+    }
+  }
 }
 
 #undef BLOCK_ARRAY

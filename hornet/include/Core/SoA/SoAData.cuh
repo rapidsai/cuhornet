@@ -152,6 +152,8 @@ class CSoAData<TypeList<Ts...>, device_t> {
     void resize(const int resize_items) noexcept;
 
     DeviceType get_device_type(void) noexcept;
+
+    void segmented_sort(int segment_length_log2);
 };
 
 
@@ -170,4 +172,5 @@ void print_soa(CSoAData<TypeList<Ts...>, DeviceType::DEVICE>& data);
 }
 
 #include "impl/SoAData.i.cuh"
+#include "impl/SoADataSort.i.cuh"
 #endif

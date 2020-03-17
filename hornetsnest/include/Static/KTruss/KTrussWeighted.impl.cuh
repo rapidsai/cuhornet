@@ -42,7 +42,8 @@ using namespace rmm;
 
 namespace hornets_nest {
 
-void kTrussOneIteration(HornetGraph& hornet,
+template <typename HornetGraphType>
+void kTrussOneIterationWeighted(HornetGraphType& hornet,
                         triangle_t*  __restrict__ output_triangles,
                         int threads_per_block,
                         int number_blocks,
@@ -53,18 +54,21 @@ void kTrussOneIteration(HornetGraph& hornet,
 
 //==============================================================================
 
-KTruss::KTruss(HornetGraph& hornet) : StaticAlgorithm(hornet) {
-    hd_data().active_queue.initialize(hornet);
-    originalNE = hornet.nE();
-    originalNV = hornet.nV();
+template <typename T>
+KTrussWeighted<T>::KTrussWeighted(HornetGraphWeighted<T>& hornet) : StaticAlgorithm<HornetGraphWeighted<T>>(hornet), hnt(hornet){
+    hd_data().active_queue.initialize(hnt);
+    originalNE = hnt.nE();
+    originalNV = hnt.nV();
 
 }
 
-KTruss::~KTruss() {
+template <typename T>
+KTrussWeighted<T>::~KTrussWeighted() {
     release();
 }
 
-void KTruss::setInitParameters(int tsp, int nbl, int shifter,
+template <typename T>
+void KTrussWeighted<T>::setInitParameters(int tsp, int nbl, int shifter,
                                int blocks, int sps) {
     hd_data().tsp     = tsp;
     hd_data().nbl     = nbl;
@@ -73,7 +77,8 @@ void KTruss::setInitParameters(int tsp, int nbl, int shifter,
     hd_data().sps     = sps;
 }
 
-void KTruss::init(){
+template <typename T>
+void KTrussWeighted<T>::init(){
     gpu::allocate(hd_data().is_active,            originalNV);
     gpu::allocate(hd_data().offset_array,         originalNV + 1);
     gpu::allocate(hd_data().triangles_per_vertex, originalNV);
@@ -85,14 +90,15 @@ void KTruss::init(){
     reset();
 }
 
-void KTruss::createOffSetArray(){
+template <typename T>
+void KTrussWeighted<T>::createOffSetArray(){
 
     gpu::memsetZero(hd_data().offset_array, originalNV+1);
 
     int *tempSize;
     gpu::allocate(tempSize, originalNV+1);
 
-    forAllVertices(hornet, getVertexSizes {tempSize});
+    forAllVertices(hnt, getVertexSizes {tempSize});
 
     cudaStream_t stream{nullptr};
     thrust::inclusive_scan(rmm::exec_policy(stream)->on(stream), tempSize, tempSize + originalNV, hd_data().offset_array+1);
@@ -100,25 +106,30 @@ void KTruss::createOffSetArray(){
     gpu::free(tempSize);
 }
 
-void KTruss::copyOffsetArrayHost(const vert_t* host_offset_array) {
+template <typename T>
+void KTrussWeighted<T>::copyOffsetArrayHost(const vert_t* host_offset_array) {
     cudaMemcpy(hd_data().offset_array,host_offset_array,(originalNV + 1)*sizeof(vert_t), cudaMemcpyHostToDevice);
 }
 
-void KTruss::copyOffsetArrayDevice(vert_t* device_offset_array){
+template <typename T>
+void KTrussWeighted<T>::copyOffsetArrayDevice(vert_t* device_offset_array){
     cudaMemcpy(hd_data().offset_array,device_offset_array,(originalNV + 1)*sizeof(vert_t), cudaMemcpyDeviceToDevice);
 }
 
-vert_t KTruss::getMaxK() {
+template <typename T>
+vert_t KTrussWeighted<T>::getMaxK() {
     return hd_data().max_K;
 }
 
-void KTruss::sortHornet(){
-  hornet.sort();
+template <typename T>
+void KTrussWeighted<T>::sortHornet(){
+  hnt.sort();
 }
 
 //==============================================================================
 
-void KTruss::reset() {
+template <typename T>
+void KTrussWeighted<T>::reset() {
     cudaMemset(hd_data().counter,0, sizeof(int));
     hd_data().num_edges_remaining      = originalNE;
     hd_data().full_triangle_iterations = 0;
@@ -127,15 +138,18 @@ void KTruss::reset() {
     resetVertexArray();
 }
 
-void KTruss::resetVertexArray() {
+template <typename T>
+void KTrussWeighted<T>::resetVertexArray() {
     gpu::memsetZero(hd_data().triangles_per_vertex, originalNV);
 }
 
-void KTruss::resetEdgeArray() {
+template <typename T>
+void KTrussWeighted<T>::resetEdgeArray() {
     gpu::memsetZero(hd_data().triangles_per_edge, originalNE);
 }
 
-void KTruss::release() {
+template <typename T>
+void KTrussWeighted<T>::release() {
     gpu::free(hd_data().is_active);
     gpu::free(hd_data().offset_array);
     gpu::free(hd_data().triangles_per_edge);
@@ -158,7 +172,8 @@ void KTruss::release() {
 
 //==============================================================================
 
-void KTruss::run() {
+template <typename T>
+void KTrussWeighted<T>::run() {
     hd_data().max_K = 3;
     int  iterations = 0;
 
@@ -175,26 +190,31 @@ void KTruss::run() {
     }
 }
 
-void KTruss::runForK(int max_K) {
+template <typename T>
+void KTrussWeighted<T>::runForK(int max_K) {
     hd_data().max_K = max_K;
 
     findTrussOfK();
 }
 
+template <typename T>
 int
-KTruss::getGraphEdgeCount(void) {
-  return hornet.nE();
+KTrussWeighted<T>::getGraphEdgeCount(void) {
+  return hnt.nE();
 }
 
+template <typename T>
 void
-KTruss::copyGraph(vert_t * src, vert_t * dst) {
-    auto coo = hornet.getCOO(false);
+KTrussWeighted<T>::copyGraph(vert_t * src, vert_t * dst, T * weight) {
+    auto coo = hnt.getCOO(false);
     cudaMemcpy(src, coo.srcPtr(), sizeof(vert_t)*coo.size(), cudaMemcpyDeviceToDevice);
     cudaMemcpy(dst, coo.dstPtr(), sizeof(vert_t)*coo.size(), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(weight, coo.template edgeMetaPtr<0>(), sizeof(T)*coo.size(), cudaMemcpyDeviceToDevice);
 }
 
-void KTruss::findTrussOfK() {
-    forAllVertices(hornet, Init { hd_data });
+template <typename T>
+void KTrussWeighted<T>::findTrussOfK() {
+    forAllVertices(hnt, Init { hd_data });
     resetEdgeArray();
     resetVertexArray();
  
@@ -205,21 +225,21 @@ void KTruss::findTrussOfK() {
     while (h_active_vertices > 0) {
 
         hd_data().full_triangle_iterations++;
-        kTrussOneIteration(hornet, hd_data().triangles_per_vertex,
+        kTrussOneIterationWeighted(hnt, hd_data().triangles_per_vertex,
                            hd_data().tsp, hd_data().nbl,
                            hd_data().shifter,
                            hd_data().blocks, hd_data().sps,
                            hd_data);
 
-        forAllVertices(hornet, FindUnderK { hd_data });
+        forAllVertices(hnt, FindUnderK { hd_data });
 
         int h_counter;
         cudaMemcpy(&h_counter,hd_data().counter, sizeof(int),cudaMemcpyDeviceToHost);
 
         if (h_counter != 0) {
-              UpdatePtr ptr(h_counter, hd_data().src, hd_data().dst);
-              Update batch_update(ptr);
-              hornet.erase(batch_update);
+              UpdatePtrWeighted<T> ptr(h_counter, hd_data().src, hd_data().dst, nullptr);
+              UpdateWeighted<T> batch_update(ptr);
+              hnt.erase(batch_update);
               hd_data().num_edges_remaining -= h_counter;
     CHECK_CUDA_ERROR
         }
@@ -231,7 +251,7 @@ void KTruss::findTrussOfK() {
         // Resetting the number of active vertices before check
         cudaMemset(hd_data().active_vertices,0, sizeof(int));
 
-        forAllVertices(hornet, CountActive { hd_data });
+        forAllVertices(hnt, CountActive { hd_data });
 
         sortHornet();
 
