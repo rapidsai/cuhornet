@@ -1,10 +1,28 @@
+/*
+ * Copyright (c) 2020, NVIDIA CORPORATION.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include <limits>
 
 namespace hornet {
 
 namespace gpu {
 
-//TODO InvalidEdgeCount
+//LRB segmented sort is based on the following papers:
+//Fox, James, Alok Tripathy, and Oded Green. "Improving Scheduling for Irregular Applications with Logarithmic Radix Binning." IEEE High Performance Extreme Computing Conference (HPEC), 2019
+//Green, Oded, James Fox, Alex Watkins, Alok Tripathy, Kasimir Gabert, Euna Kim, Xiaojing An, Kumar Aatish, and David A. Bader. "Logarithmic radix binning and vectorized triangle counting." IEEE High Performance extreme Computing Conference (HPEC), 2018.
+
 template <typename degree_t>
 struct InvalidEdgeCount {
   __device__
