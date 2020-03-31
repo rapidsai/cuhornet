@@ -66,13 +66,18 @@ public:
     void release()  override;
     bool validate() override;
 
-    void set_parameters(vid_t source);
+    void runAlg(int alg=0);
+
+    void set_parameters(vid_t source,int load_balancing=0);
 
     dist_t getLevels(){return current_level;}
 
 private:
     TwoLevelQueue<vid_t>        queue;
     load_balancing::BinarySearch load_balancing;
+    load_balancing::LogarthimRadixBinning32 lrb_lb;
+    int lb_mechansim;
+
     //load_balancing::VertexBased1 load_balancing;
     dist_t* d_distances   { nullptr };
     vid_t   bfs_source    { 0 };
@@ -101,8 +106,10 @@ struct BFSOperatorAtomic {                  //deterministic
 
     OPERATOR(Vertex& vertex, Edge& edge) {
         auto dst = edge.dst_id();
-        if (atomicCAS(d_distances + dst, INF, current_level) == INF)
-            queue.insert(dst);
+        if(d_distances[dst]==INF){
+            if (atomicCAS(d_distances + dst, INF, current_level) == INF)
+                queue.insert(dst);            
+        }
     }
 };
 //------------------------------------------------------------------------------
@@ -116,7 +123,9 @@ template <typename HornetGraph>
 BFSTOPDOWN2::BfsTopDown2(HornetGraph& hornet) :
                                  StaticAlgorithm<HornetGraph>(hornet),
                                  queue(hornet, 5),
-                                 load_balancing(hornet) {
+                                 load_balancing(hornet),
+                                 lrb_lb(hornet)
+                                  {
     gpu::allocate(d_distances, hornet.nV());
     reset();
 }
@@ -132,31 +141,40 @@ void BFSTOPDOWN2::reset() {
     queue.clear();
 
     auto distances = d_distances;
-
+    lb_mechansim = 0;
     forAllnumV(
         StaticAlgorithm<HornetGraph>::hornet,
         [=] __device__ (int i){ distances[i] = INF; } );
 }
 
 template <typename HornetGraph>
-void BFSTOPDOWN2::set_parameters(vid_t source) {
+void BFSTOPDOWN2::set_parameters(vid_t source,int load_balancing) {
     bfs_source = source;
     queue.insert(bfs_source);               // insert bfs source in the frontier
     gpu::memsetZero(d_distances + bfs_source);  //reset source distance
+    lb_mechansim = load_balancing;
 }
 
 template <typename HornetGraph>
 void BFSTOPDOWN2::run() {
+    printf("bfs_source = %d\n",bfs_source);
     while (queue.size() > 0) {
-
-        forAllEdges(
-            StaticAlgorithm<HornetGraph>::hornet,
-            queue,
-                    BFSOperatorAtomic { current_level, d_distances, queue },
-                    load_balancing);
+ 
+        if(lb_mechansim==0){
+            forAllEdges(
+                StaticAlgorithm<HornetGraph>::hornet, queue,
+                        BFSOperatorAtomic { current_level, d_distances, queue },
+                        lrb_lb);
+        }else{
+            forAllEdges(
+                StaticAlgorithm<HornetGraph>::hornet, queue,
+                        BFSOperatorAtomic { current_level, d_distances, queue },
+                        load_balancing);
+        }
         queue.swap();
         current_level++;
     }
+    // std::cout << "Number of levels is : " << current_level << std::endl;
 }
 
 template <typename HornetGraph>
