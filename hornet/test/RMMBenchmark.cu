@@ -12,7 +12,6 @@ using namespace hornets_nest;
 using timer_duration_t = float;//return type of timer::Timer::duration()
 
 int exec() {
-#if defined(RMM_WRAPPER)
     constexpr size_t repeat_cnt = 10;
     size_t min_size = 1024;//1KB
     size_t round = 0;
@@ -128,26 +127,19 @@ int exec() {
     }
 
     std::cout << "* unit: ms, measured time includes both memory allocation and deallocation." << std::endl;
-#else
-    std::cout << "RMM_WRAPPER should be defined to benchmark RMM." << std::endl;
-#endif
 
     return 0;
 }
 
 int main() {
     int ret = 0;
-#if defined(RMM_WRAPPER)
     gpu::initializeRMMPoolAllocation();//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
     {//scoping technique to make sure that gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
-#endif
 
     ret = exec();
 
-#if defined(RMM_WRAPPER)
     }//scoping technique to make sure that gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
     gpu::finalizeRMMPoolAllocation();
-#endif
 
     return ret;
 }

@@ -38,6 +38,7 @@
 #include <Device/Util/SafeCudaAPI.cuh>      //cuMemcpyToDeviceAsync
 //#include <BasicTypes.hpp>
 #include <Core/Hornet.cuh>
+#include <Core/Static/HornetStatic.cuh>
 #include "StandardAPI.hpp"
 
 namespace hornets_nest {
@@ -53,7 +54,7 @@ template<typename HornetClass>
 TwoLevelQueue<T>::TwoLevelQueue(const HornetClass& hornet,
                                 const float work_factor) noexcept :
                               _max_allocated_items(hornet.nV() * work_factor) {
-    static_assert(hornet::IsHornet<HornetClass>::value,
+    static_assert(hornet::IsHornet<HornetClass>::value || hornet::IsHornetStatic<HornetClass>::value,
                  "TwoLevelQueue paramenter is not an instance of Hornet Class");
     _initialize();
 }
@@ -166,8 +167,8 @@ __global__ void swapKernel(int2* d_counters) {
 template<typename T>
 void TwoLevelQueue<T>::sync() const noexcept {
     cuMemcpyToHost(_d_counters, _h_counters);
-    assert(_h_counters.x < _max_allocated_items && "TwoLevelQueue too small");
-    assert(_h_counters.y < _max_allocated_items && "TwoLevelQueue too small");
+    assert(_h_counters.x <= _max_allocated_items && "TwoLevelQueue too small");
+    assert(_h_counters.y <= _max_allocated_items && "TwoLevelQueue too small");
 }
 
 template<typename T>

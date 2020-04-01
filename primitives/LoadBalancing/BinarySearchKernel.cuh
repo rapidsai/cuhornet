@@ -78,14 +78,16 @@ void binarySearchKernel(HornetDevice              hornet,
                         int                       work_size,
                         Operator                  op) {
 
-    const int ITEMS_PER_BLOCK = xlib::smem_per_block<vid_t, BLOCK_SIZE>();
+    using degree_t = typename HornetDevice::DegreeType;
+    const int ITEMS_PER_BLOCK = xlib::smem_per_block<degree_t, BLOCK_SIZE>();
+    __shared__ degree_t smem[ITEMS_PER_BLOCK];
     const auto& lambda = [&](int pos, degree_t offset) {
                             const auto& vertex = hornet.vertex(d_input[pos]);
                             const auto&   edge = vertex.edge(offset);
                             op(vertex, edge);
                         };
     xlib::binarySearchLB<BLOCK_SIZE, ITEMS_PER_BLOCK / BLOCK_SIZE>
-        (d_work, work_size, xlib::dyn_smem, lambda);
+        (d_work, work_size, smem, lambda);
 }
 
 template<unsigned BLOCK_SIZE,
@@ -96,12 +98,16 @@ void binarySearchKernel(HornetDevice              hornet,
                         int                       work_size,
                         Operator                  op) {
 
+    using degree_t = typename HornetDevice::DegreeType;
+    const int ITEMS_PER_BLOCK = xlib::smem_per_block<degree_t, BLOCK_SIZE>();
+    __shared__ degree_t smem[ITEMS_PER_BLOCK];
     const auto& lambda = [&](int pos, degree_t offset) {
                             const auto& vertex = hornet.vertex(pos);
                             const auto&   edge = vertex.edge(offset);
                             op(vertex, edge);
                         };
-    xlib::binarySearchLB<BLOCK_SIZE>(d_work, work_size, xlib::dyn_smem, lambda);
+    xlib::binarySearchLB<BLOCK_SIZE, ITEMS_PER_BLOCK / BLOCK_SIZE>
+      (d_work, work_size, smem, lambda);
 }
 
 } // namespace kernel

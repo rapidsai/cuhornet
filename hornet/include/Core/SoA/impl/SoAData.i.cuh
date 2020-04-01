@@ -34,6 +34,11 @@
  * </blockquote>}
  */
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
 namespace hornet {
 
 //==============================================================================
@@ -229,7 +234,9 @@ struct DevicePrint {
             DeviceType src_device_type,
             int num_items) {
         if (src_device_type == DeviceType::DEVICE) {
-          std::cout<<"TODO : Implement\n";
+          //std::cout<<"TODO : Implement\n";
+          auto sptr = thrust::device_pointer_cast(src);
+          thrust::copy(sptr, sptr + num_items, std::ostream_iterator<T>(std::cout, " "));
         } else if (src_device_type == DeviceType::HOST) {
             for (int i = 0; i < num_items; ++i) {
                 std::cout<<src[i]<<" ";
@@ -309,10 +316,13 @@ struct RecursivePrint<N, N> {
 
 template<typename... Ts, DeviceType device_t>
 SoAData<TypeList<Ts...>, device_t>::
-SoAData(const int num_items) noexcept :
+SoAData(const int num_items, bool initToZero) noexcept :
 _num_items(num_items), _capacity(num_items) {
     if (num_items != 0) {
         RecursiveAllocate<0, sizeof...(Ts) - 1, device_t>::allocate(_soa, _capacity);
+        if (initToZero) {
+          RecursiveFillNull<0, sizeof...(Ts) - 1>::fillNull(_soa, _capacity);
+        }
     }
 }
 
@@ -398,7 +408,7 @@ template<typename... Ts, DeviceType device_t>
 void
 SoAData<TypeList<Ts...>, device_t>::
 sort(void) noexcept {
-  thrust::device_vector<int> range;
+  rmm::device_vector<int> range;
   if (sizeof...(Ts) > 3) {
     SoAPtr<Ts...> temp_soa;
     RecursiveAllocate<0, sizeof...(Ts) - 1, device_t>::allocate(temp_soa, _num_items);
@@ -446,6 +456,13 @@ DeviceType
 SoAData<TypeList<Ts...>, device_t>::
 get_device_type(void) noexcept {
     return device_t;
+}
+
+template<typename... Ts, DeviceType device_t>
+void
+SoAData<TypeList<Ts...>, device_t>::
+setEmpty(void) noexcept {
+  RecursiveFillNull<0, sizeof...(Ts) - 1>::fillNull(_soa, _capacity);
 }
 
 //==============================================================================
@@ -526,7 +543,15 @@ get_soa_ptr(void) const noexcept {
 template<typename... Ts, DeviceType device_t>
 void
 CSoAData<TypeList<Ts...>, device_t>::
-copy(SoAPtr<Ts...> other, const DeviceType other_d_t, const int other_num_items) noexcept {
+copy(SoAPtr<Ts const...> other, DeviceType other_d_t, int other_num_items) noexcept {
+    int _item_count = std::min(other_num_items, _num_items);
+    RecursiveCopy<0, sizeof...(Ts) - 1>::copy(other, other_d_t, _soa, device_t, _item_count);
+}
+
+template<typename... Ts, DeviceType device_t>
+void
+CSoAData<TypeList<Ts...>, device_t>::
+copy(SoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept {
     int _item_count = std::min(other_num_items, _num_items);
     RecursiveCopy<0, sizeof...(Ts) - 1>::copy(other, other_d_t, _soa, device_t, _item_count);
 }
@@ -590,25 +615,25 @@ get_device_type(void) noexcept {
 
 
 template<typename... Ts>
-void print(SoAData<TypeList<Ts...>, DeviceType::HOST>& data) {
+void print_soa(SoAData<TypeList<Ts...>, DeviceType::HOST>& data) {
     auto ptr = data.get_soa_ptr();
     RecursivePrint<0, sizeof...(Ts) - 1>::print(ptr, DeviceType::HOST, data.get_num_items());
 }
 
 template<typename... Ts>
-void print(SoAData<TypeList<Ts...>, DeviceType::DEVICE>& data) {
+void print_soa(SoAData<TypeList<Ts...>, DeviceType::DEVICE>& data) {
     auto ptr = data.get_soa_ptr();
     RecursivePrint<0, sizeof...(Ts) - 1>::print(ptr, DeviceType::DEVICE, data.get_num_items());
 }
 
 template<typename... Ts>
-void print(CSoAData<TypeList<Ts...>, DeviceType::HOST>& data) {
+void print_soa(CSoAData<TypeList<Ts...>, DeviceType::HOST>& data) {
     auto ptr = data.get_soa_ptr();
     RecursivePrint<0, sizeof...(Ts) - 1>::print(ptr, DeviceType::HOST, data.get_num_items());
 }
 
 template<typename... Ts>
-void print(CSoAData<TypeList<Ts...>, DeviceType::DEVICE>& data) {
+void print_soa(CSoAData<TypeList<Ts...>, DeviceType::DEVICE>& data) {
     auto ptr = data.get_soa_ptr();
     RecursivePrint<0, sizeof...(Ts) - 1>::print(ptr, DeviceType::DEVICE, data.get_num_items());
 }

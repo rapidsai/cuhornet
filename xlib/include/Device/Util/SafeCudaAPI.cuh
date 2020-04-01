@@ -61,6 +61,7 @@
 #include <cassert>           //assert
 #include <cuda_runtime.h>    //cudaError_t
 #include <utility>           //std::forward
+#include <rmm/rmm.h>
 
 #if defined(NEVER_DEFINED)
     #include "SafeFunctions_.cuh"
@@ -116,13 +117,43 @@ namespace xlib {
 
 namespace detail {
 
-void getLastCudaError(const char* file, int line, const char* func_name);
-
-void safe_call(cudaError_t error, const char* file, int line,
-               const char* func_name);
-
+inline
 void cudaErrorHandler(cudaError_t error, const char* error_message,
-                      const char* file, int line, const char* func_name);
+                      const char* file, int line,
+                      const char* func_name) {
+    if (cudaSuccess != error) {
+        std::cerr << Color::FG_RED << "\nCUDA error\n" << Color::FG_DEFAULT
+                  << Emph::SET_UNDERLINE << file
+                  << Emph::SET_RESET  << "(" << line << ")"
+                  << " [ "
+                  << Color::FG_L_CYAN << func_name << Color::FG_DEFAULT
+                  << " ] : " << error_message
+                  << " -> " << cudaGetErrorString(error)
+                  << "(" << static_cast<int>(error) << ")\n";
+        if (error == cudaErrorMemoryAllocation) {
+            size_t free, total;
+            cudaMemGetInfo(&free, &total);
+            std::cerr << "\nActual allocated memory: " << std::setprecision(1)
+                      << std::fixed << (total - free) / xlib::MB << " MB\n";
+        }
+        std::cerr << std::endl;
+        assert(false);                                                  //NOLINT
+        std::atexit(reinterpret_cast<void(*)()>(cudaDeviceReset));
+        std::exit(EXIT_FAILURE);
+    }
+}
+
+inline
+void getLastCudaError(const char* file, int line, const char* func_name) {
+    cudaErrorHandler(cudaGetLastError(), "", file, line, func_name);
+}
+
+
+inline
+void safe_call(cudaError_t error, const char* file, int line,
+                 const char* func_name) {
+    cudaErrorHandler(error, "", file, line, func_name);
+}
 
 template<typename T>
 void cuGetSymbolAddressAux(const char* file, int line, const char* func_name,
@@ -143,12 +174,29 @@ void cuGetSymbolAddressAux(const char* file, int line, const char* func_name,
 //  cuMalloc  //
 ////////////////
 
+//it may be better to move this inside a cpp file (similar to xlib::detail::cudaErrorHandler) if there is an appropriate place.
+#define RMM_ERROR_HANDLER(caller_name, callee_name, result) do {                                                   \
+    std::cerr << xlib::Color::FG_RED << "\nRMM error\n" << xlib::Color::FG_DEFAULT          \
+        << xlib::Emph::SET_UNDERLINE << __FILE__                                            \
+        << xlib::Emph::SET_RESET  << "(" << __LINE__ << ")"                                 \
+        << " [ "                                                                            \
+        << xlib::Color::FG_L_CYAN << (caller_name) << xlib::Color::FG_DEFAULT \
+        << " ] : " << callee_name                                                              \
+        << " -> " << rmmGetErrorString(result)                                              \
+        << "(" << static_cast<int>(result) << ")\n";                                        \
+    assert(false);                                                                          \
+    std::atexit(reinterpret_cast<void(*)()>(cudaDeviceReset));                              \
+    std::exit(EXIT_FAILURE);                                                                \
+} while (0)
+
 template<typename T>
 void cuMallocAux(const char* file, int line, const char* func_name,
                  T*& ptr, size_t num_items) noexcept {
     assert(num_items > 0);
-    cudaErrorHandler(cudaMalloc(&ptr, num_items * sizeof(T)), "cudaMalloc",
-                     file, line, func_name);
+    auto result = RMM_ALLOC(&ptr, num_items * sizeof(T), 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) {
+        RMM_ERROR_HANDLER("cuMalloc", "rmmAlloc", result);
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -224,20 +272,26 @@ void cuMallocHostAux(const char* file, int line, const char* func_name,
 template<typename T>
 typename std::enable_if<std::is_pointer<T>::value>::type
 cuFreeAux(const char* file, int line, const char* func_name, T& ptr)  noexcept {
+    if (ptr != nullptr) {
     using R    = typename xlib::remove_const_ptr<T>::type;
     auto& ptr1 = const_cast<R&>(ptr);
-    cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line, func_name);
+    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
     ptr1 = nullptr;
+    }
 }
 
 template<typename T, typename... TArgs>
 typename std::enable_if<std::is_pointer<T>::value>::type
 cuFreeAux(const char* file, int line, const char* func_name,
           T& ptr, TArgs*... ptrs) noexcept {
+    if (ptr != nullptr) {
     using R    = typename xlib::remove_const_ptr<T>::type;
     auto& ptr1 = const_cast<R&>(ptr);
-    cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line, func_name);
+    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
     ptr1 = nullptr;
+    }
     cuFreeAux(file, line, func_name, ptrs...);
 }
 
@@ -247,7 +301,8 @@ void cuFreeAux(const char* file, int line, const char* func_name,
     using R = typename std::remove_cv<T*>::type;
     for (int i = 0; i < SIZE; i++) {
         auto ptr1 = const_cast<R>(ptr[i]);
-        cudaErrorHandler(cudaFree(ptr1), "cudaFree", file, line,  func_name);
+    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
     }
 }
 
@@ -255,7 +310,8 @@ template<typename T, int SIZE>
 void cuFreeAux(const char* file, int line, const char* func_name,
                T* (&ptr)[SIZE]) noexcept {
     for (int i = 0; i < SIZE; i++) {
-        cudaErrorHandler(cudaFree(ptr[i]), "cudaFree", file, line,  func_name);
+    auto result = RMM_FREE(ptr[i], 0);//by default, use the default stream
+    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
         ptr[i] = nullptr;
     }
 }

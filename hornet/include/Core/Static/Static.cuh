@@ -10,6 +10,11 @@
 #include "../Hornet.cuh"
 #include <map>
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
 namespace hornet {
 
 template <DeviceType = DeviceType::DEVICE, typename = VID_T, typename = EMPTY, typename = DEGREE_T> class COO;
@@ -29,7 +34,7 @@ public:
   using Vector = typename
   std::conditional<
   (device_t == DeviceType::DEVICE),
-  typename thrust::device_vector<T>,
+  typename rmm::device_vector<T>,
   typename thrust::host_vector<T>>::type;
 
   template <DeviceType other_device>
@@ -100,7 +105,7 @@ public:
   using Offset = typename
   std::conditional<
   (device_t == DeviceType::DEVICE),
-  typename thrust::device_vector<T>,
+  typename rmm::device_vector<T>,
   typename thrust::host_vector<T>>::type;
 
 private:

@@ -1,13 +1,50 @@
+/*
+ * Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *  * Neither the name of NVIDIA CORPORATION nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #pragma once
 
 #include "HornetAlg.hpp"
 
 namespace hornets_nest {
 
-const bool _FORCE_SOA = true;
+// const bool _FORCE_SOA = true;
 
-using triangle_t = int;
-using HornetGraph = gpu::Hornet<EMPTY, TypeList<triangle_t>, _FORCE_SOA>;
+using triangle_t = vert_t;
+
+using HornetGraph = hornet::gpu::Hornet<vert_t>;
+
+
+
+using HornetInit  = ::hornet::HornetInit<vert_t>;
+
+using UpdatePtr   = ::hornet::BatchUpdatePtr<vert_t, hornet::EMPTY, hornet::DeviceType::DEVICE>;
+using Update      = ::hornet::gpu::BatchUpdate<vert_t>;
+
 
 struct KTrussData {
     int max_K;
@@ -23,16 +60,16 @@ struct KTrussData {
     int* triangles_per_edge;
     int* triangles_per_vertex;
 
-    vid_t* src;
-    vid_t* dst;
-    int    counter;
-    int    active_vertices;
+    vert_t* src;
+    vert_t* dst;
+    int*    counter;
+    int*    active_vertices;
 
-    TwoLevelQueue<vid_t> active_queue; // Stores all the active vertices
+    TwoLevelQueue<vert_t> active_queue; // Stores all the active vertices
 
     int full_triangle_iterations;
 
-    vid_t nv;
+    vert_t nv;
     off_t ne;                  // undirected-edges
     off_t num_edges_remaining; // undirected-edges
 };
@@ -55,38 +92,29 @@ public:
                            int blocks, int sps);
     void init();
 
-    bool findTrussOfK(bool& stop);
+    void findTrussOfK();
     void runForK(int max_K);
 
-    void runDynamic();
-    bool findTrussOfKDynamic(bool& stop);
-    void runForKDynamic(int max_K);
-
-    void copyOffsetArrayHost(vid_t* host_offset_array);
-    void copyOffsetArrayDevice(vid_t* device_offset_array);
+    void createOffSetArray();
+    void copyOffsetArrayHost(const vert_t* host_offset_array);
+    void copyOffsetArrayDevice(vert_t* device_offset_array);
     void resetEdgeArray();
     void resetVertexArray();
 
-    vid_t getIterationCount();
-    vid_t getMaxK();
+    vert_t getIterationCount();
+    vert_t getMaxK();
+
+    void sortHornet();
 
 private:
     HostDeviceVar<KTrussData> hd_data;
 
-    //load_balancing::BinarySearch load_balancing;
-    //load_balancing::VertexBased1 load_balancing;
+    vert_t originalNE;
+    vert_t originalNV;
 };
 
-//==============================================================================
-
-void callDeviceDifferenceTriangles(const HornetGraph& hornet,
-                                   const gpu::BatchUpdate& batch_update,
-                                   triangle_t* __restrict__ output_triangles,
-                                   int threads_per_intersection,
-                                   int num_intersec_perblock,
-                                   int shifter,
-                                   int thread_blocks,
-                                   int blockdim,
-                                   bool deletion);
 
 } // namespace hornets_nest
+
+
+#include "Static/KTruss/KTruss.impl.cuh"

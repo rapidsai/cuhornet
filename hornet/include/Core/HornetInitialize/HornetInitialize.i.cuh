@@ -35,6 +35,11 @@
  */
 #include "../SoA/SoAData.cuh"
 
+#include <rmm/rmm.h>
+#include <rmm/thrust_rmm_allocator.h>
+
+using namespace rmm;
+
 namespace hornet {
 namespace gpu {
 
@@ -81,7 +86,7 @@ Hornet(degree_t nV) noexcept :
     _nV(nV),
     _nE(0),
     _id(_instance_count++),
-    _vertex_data(nV) { }
+    _vertex_data(nV, true) { }
 
 template <typename... VertexMetaTypes, typename... EdgeMetaTypes,
     typename vid_t, typename degree_t>
@@ -111,13 +116,13 @@ initialize(HornetInit<
     const auto * offsets = h_init.csr_offsets();
     for (int i = 0; i < h_init.nV(); ++i) {
         auto degree = offsets[i + 1] - offsets[i];
-        if (degree == 0) { continue; }
         auto device_ad = _ba_manager.insert(degree);
         auto e_ref = e_d[i];
         e_ref.template get<0>() = degree;
         e_ref.template get<1>() = device_ad.edge_block_ptr;
         e_ref.template get<2>() = device_ad.vertex_offset;
         e_ref.template get<3>() = device_ad.edges_per_block;
+        if (degree == 0) { continue; }
 
         CSoAPtr<vid_t, EdgeMetaTypes...> e_ptr;
 
@@ -158,14 +163,14 @@ print(void) {
     auto ptr = host_vertex_data.get_soa_ptr();
     for (int i = 0; i < _nV; ++i) {
         degree_t v_degree = ptr[i].template get<0>();
-        std::cout<<i<<" : "<<v_degree<<" | ";
+        std::cerr<<i<<" : "<<v_degree<<" | ";
         if (v_degree != 0) {
-          thrust::device_vector<degree_t> dst(v_degree);
+          rmm::device_vector<degree_t> dst(v_degree);
           vid_t * dst_ptr = reinterpret_cast<vid_t*>(ptr[i].template get<1>()) + ptr[i].template get<2>();
           thrust::copy(dst_ptr, dst_ptr + v_degree, dst.begin());
-          thrust::copy(dst.begin(), dst.end(), std::ostream_iterator<vid_t>(std::cout, " "));
+          thrust::copy(dst.begin(), dst.end(), std::ostream_iterator<vid_t>(std::cerr, " "));
         }
-        std::cout<<"\n";
+        std::cerr<<"\n";
 
     }
 }

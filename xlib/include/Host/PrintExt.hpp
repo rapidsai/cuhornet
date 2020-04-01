@@ -78,8 +78,27 @@ enum class Emph {
 };
 
 /// @cond
-std::ostream& operator<<(std::ostream& os, Color mod);
-std::ostream& operator<<(std::ostream& os, Emph mod);
+#if defined(__linux__)
+
+inline
+std::ostream& operator<<(std::ostream& os, Color mod) {
+    return os << "\033[" << static_cast<int>(mod) << "m";
+}
+
+inline
+std::ostream& operator<<(std::ostream& os, Emph mod) {
+    return os << "\033[" << static_cast<int>(mod) << "m";
+}
+
+#else
+
+inline
+std::ostream& operator<<(std::ostream& os, Color mod) { return os; }
+
+inline
+std::ostream& operator<<(std::ostream& os, Emph mod)  { return os; };
+
+#endif
 /// @endcond
 //------------------------------------------------------------------------------
 
