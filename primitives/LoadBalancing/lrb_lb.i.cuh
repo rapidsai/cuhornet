@@ -28,8 +28,18 @@
  */
 
 /*
+Details of Logarthmic Radix Binning (LRB for short) can be found in additional detail in
 
+[1] Fox, James, Alok Tripathy, and Oded Green
+    "Improving Scheduling for Irregular Applications with Logarithmic Radix Binning."
+    IEEE High Performance Extreme Computing Conference (HPEC), 2019
 
+[2] Green, Oded, James Fox, Alex Watkins, Alok Tripathy, Kasimir Gabert, Euna Kim,
+    Xiaojing An, Kumar Aatish, and David A. Bader.
+    "Logarithmic radix binning and vectorized triangle counting."
+    IEEE High Performance extreme Computing Conference (HPEC), 2018.
+
+This implementation of LRB follows the details in [1]. More details of LRB can be found in [2].
 */
 
 #pragma once
