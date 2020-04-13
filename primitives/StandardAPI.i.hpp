@@ -155,12 +155,6 @@ void memsetOne(T* pointer, size_t num_items) {
 }
 
 template<typename T>
-T reduce(const T* input, size_t num_items) {
-    xlib::CubReduce<T> cub_reduce(input, num_items);
-    return cub_reduce.run();
-}
-
-template<typename T>
 void excl_prefixsum(const T* input, size_t num_items, T* output) {
     xlib::CubExclusiveSum<T> cub_prefixsum(input, num_items, output);
     cub_prefixsum.run();
