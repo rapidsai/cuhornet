@@ -64,8 +64,7 @@ public:
      * @param[in] hornet Hornet instance
      */
     template<typename HornetClass>
-    explicit LogarthimRadixBinning32(HornetClass& hornet,
-                          const float work_factor = 2.0f) noexcept;
+    explicit LogarthimRadixBinning32(HornetClass& hornet) noexcept;
 
     /**
      * @brief Decostructor
@@ -94,14 +93,14 @@ public:
 private:
     static const unsigned BLOCK_SIZE = 128;
 
-    mutable xlib::CubExclusiveSum<int> prefixsum;
+    // mutable xlib::CubExclusiveSum<int> prefixsum;
 
-    int32_t*      d_lrbRelabled;
-    int32_t*      d_bins;
-    int32_t*      d_binsPrefix;
+    int32_t*      d_lrbRelabled = nullptr;
+    int32_t*      d_bins        = nullptr;
+    int32_t*      d_binsPrefix  = nullptr;
 
     cudaEvent_t syncher;
-    const int STREAMS = 12;
+    const int LRB_STREAMS = 16;
     cudaStream_t* streams;
 
 };
