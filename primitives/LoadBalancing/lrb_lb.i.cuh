@@ -138,7 +138,7 @@ void LogarthimRadixBinning32::apply(HornetClass& hornet,
     }
 
     const int remainingFat=12;
-    const int bi = 20+remainingFat-1;
+    //const int bi = 20+remainingFat-1;
 
     blockSize = 512;
 
@@ -163,7 +163,6 @@ void LogarthimRadixBinning32::apply(HornetClass& hornet,
     // }
     cudaEventSynchronize(syncher);
 
-    // cudaEventDestroy(syncher);
 
 }
 
