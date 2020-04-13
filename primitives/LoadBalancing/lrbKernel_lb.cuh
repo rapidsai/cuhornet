@@ -75,7 +75,8 @@ void computeWorkKernelLRB(HornetDevice              hornet,
     for (auto i = id; i < num_vertices; i += stride) {
         auto deg = hornet.vertex(d_input[i]).degree();
         auto myBin  = __clz(deg);
-        atomicAdd(localBins+myBin, 1);
+        if(myBin!=0)
+            atomicAdd(localBins+myBin, 1);
     }
 
     __syncthreads();    
@@ -104,9 +105,10 @@ void computeWorkKernelLRB(HornetDevice              hornet,
     __syncthreads();
 
     for (auto i = id; i < num_vertices; i += stride) {
-        auto deg = hornet.vertex(i).degree();;
+        auto deg = hornet.vertex(i).degree();
         auto myBin  = __clz(deg);
-        atomicAdd(localBins+myBin, 1);
+        if(myBin!=0)
+            atomicAdd(localBins+myBin, 1);
     }
 
     __syncthreads();    
