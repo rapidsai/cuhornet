@@ -38,7 +38,7 @@
 
 #include "../Conf/Common.cuh"
 #include "SoAPtr.cuh"
-#include <Device/Util/SafeCudaAPI.cuh>  //cuMalloc
+#include <Device/Util/SafeCudaAPI.cuh>
 #include <Device/Util/SafeCudaAPISync.cuh>
 #include <thrust/device_vector.h>
 #include <thrust/gather.h>
