@@ -6,6 +6,7 @@
 #include <utility>
 #include <algorithm>
 #include <thrust/functional.h>
+#include <BufferPool.cuh>
 
 
 namespace hornets_nest {
@@ -37,6 +38,7 @@ public:
     void set_hcopy(HornetGraph *h_copy);
 
 private:
+    BufferPool pool;
     HostDeviceVar<KCoreData> hd_data;
     long edge_vertex_count;
 
@@ -111,22 +113,17 @@ KCORE::KCore(HornetGraph &hornet) :
                         load_balancing(hornet)
                         {
 
-    gpu::allocate(vertex_pres, hornet.nV());
-    gpu::allocate(vertex_color, hornet.nV());
-    gpu::allocate(vertex_deg, hornet.nV());
-    gpu::allocate(hd_data().src,    hornet.nE());
-    gpu::allocate(hd_data().dst,    hornet.nE());
-    gpu::allocate(hd_data().counter, 1);
+    pool.allocate(&vertex_pres, hornet.nV());
+    pool.allocate(&vertex_color, hornet.nV());
+    pool.allocate(&vertex_deg, hornet.nV());
+    pool.allocate(&hd_data().src,    hornet.nE());
+    pool.allocate(&hd_data().dst,    hornet.nE());
+    pool.allocate(&hd_data().counter, 1);
     core_number.resize(hornet.nV());
 }
 
 template <typename HornetGraph>
 KCORE::~KCore() {
-    gpu::free(vertex_pres);
-    gpu::free(vertex_color);
-    gpu::free(vertex_deg);
-    gpu::free(hd_data().src);
-    gpu::free(hd_data().dst);
 }
 
 struct Comp {
@@ -476,12 +473,8 @@ void json_dump(vert_t *src, vert_t *dst, uint32_t *peel, uint32_t peel_edges, bo
 
 template <typename HornetGraph>
 void KCORE::release() {
-    gpu::free(vertex_pres);
-    gpu::free(vertex_color);
-    gpu::free(vertex_deg);
-    gpu::free(hd_data().src);
-    gpu::free(hd_data().dst);
     hd_data().src = nullptr;
     hd_data().dst = nullptr;
+    hd_data().counter = nullptr;
 }
 }

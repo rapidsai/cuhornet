@@ -79,14 +79,14 @@ void KTrussWeighted<T>::setInitParameters(int tsp, int nbl, int shifter,
 
 template <typename T>
 void KTrussWeighted<T>::init(){
-    gpu::allocate(hd_data().is_active,            originalNV);
-    gpu::allocate(hd_data().offset_array,         originalNV + 1);
-    gpu::allocate(hd_data().triangles_per_vertex, originalNV);
-    gpu::allocate(hd_data().triangles_per_edge,   originalNE);
-    gpu::allocate(hd_data().src,                  originalNE);
-    gpu::allocate(hd_data().dst,                  originalNE);
-    gpu::allocate(hd_data().counter,              1);
-    gpu::allocate(hd_data().active_vertices,      1);
+    pool.allocate(&hd_data().is_active,            originalNV);
+    pool.allocate(&hd_data().offset_array,         originalNV + 1);
+    pool.allocate(&hd_data().triangles_per_vertex, originalNV);
+    pool.allocate(&hd_data().triangles_per_edge,   originalNE);
+    pool.allocate(&hd_data().src,                  originalNE);
+    pool.allocate(&hd_data().dst,                  originalNE);
+    pool.allocate(&hd_data().counter,              1);
+    pool.allocate(&hd_data().active_vertices,      1);
     reset();
 }
 
@@ -96,14 +96,12 @@ void KTrussWeighted<T>::createOffSetArray(){
     gpu::memsetZero(hd_data().offset_array, originalNV+1);
 
     int *tempSize;
-    gpu::allocate(tempSize, originalNV+1);
+    pool.allocate(&tempSize, originalNV+1);
 
     forAllVertices(hnt, getVertexSizes {tempSize});
 
     cudaStream_t stream{nullptr};
     thrust::inclusive_scan(rmm::exec_policy(stream)->on(stream), tempSize, tempSize + originalNV, hd_data().offset_array+1);
-
-    gpu::free(tempSize);
 }
 
 template <typename T>
@@ -150,15 +148,6 @@ void KTrussWeighted<T>::resetEdgeArray() {
 
 template <typename T>
 void KTrussWeighted<T>::release() {
-    gpu::free(hd_data().is_active);
-    gpu::free(hd_data().offset_array);
-    gpu::free(hd_data().triangles_per_edge);
-    gpu::free(hd_data().triangles_per_vertex);
-    gpu::free(hd_data().counter);
-    gpu::free(hd_data().active_vertices);
-    gpu::free(hd_data().src);
-    gpu::free(hd_data().dst);
-
     hd_data().is_active            = nullptr;
     hd_data().offset_array         = nullptr;
     hd_data().triangles_per_edge   = nullptr;

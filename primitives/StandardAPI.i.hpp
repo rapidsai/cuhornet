@@ -82,26 +82,14 @@ void finalizeRMMPoolAllocation(void) {
 
 template<typename T>
 void allocate(T*& pointer, size_t num_items) {
-    auto result = RMM_ALLOC(&pointer, num_items * sizeof(T), 0);//by default, use the default stream
-    if (result != RMM_SUCCESS) {
-        RMM_ERROR_HANDLER("hornets_nest::gpu::allocate", "rmmAlloc", result);
-    }
+    pointer = static_cast<T*>(
+        rmm::mr::get_default_resource()->allocate(sizeof(T)*num_items, 0));
 }
 
 template<typename T>
 typename std::enable_if<std::is_pointer<T>::value>::type
-free(T& pointer) {
-    auto result = RMM_FREE(pointer, 0);//by default, use the default stream
-    if (result != RMM_SUCCESS) {
-        RMM_ERROR_HANDLER("hornets_nest::gpu::free", "rmmFree", result);
-    }
-}
-
-template<typename T, typename... TArgs>
-typename std::enable_if<std::is_pointer<T>::value>::type
-free(T& pointer, TArgs*... pointers) {
-    hornets_nest::gpu::free(pointer);
-    hornets_nest::gpu::free(pointers...);
+free(T& pointer, size_t num_items) {
+    rmm::mr::get_default_resource()->deallocate(static_cast<void*>(pointer), sizeof(T)*num_items, 0);
 }
 
 template<typename T>

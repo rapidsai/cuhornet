@@ -98,7 +98,7 @@ int exec(int argc, char* argv[]) {
 
     // Katz kcStatIc(hornet_graph, max_iterations, max_degree_vertex);
     float alpha = 1.0/(max_degree_vertex+1.0); 
-    Katz kcStatIc(hornet_graph, max_iterations,alpha,true);
+    Katz kcStatIc(hornet_graph, alpha, max_iterations);
 
 
     Timer<DEVICE> TM;

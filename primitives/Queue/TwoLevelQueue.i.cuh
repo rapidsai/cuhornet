@@ -80,14 +80,14 @@ TwoLevelQueue<T>::~TwoLevelQueue() noexcept {
 #if !defined(__CUDA_ARCH__)
     if (!_kernel_copy) {
         if (_d_queue_ptrs.first != nullptr) {
-            gpu::free(_d_queue_ptrs.first);
+            gpu::free(_d_queue_ptrs.first, _max_allocated_items);
         }
 
         if (_d_queue_ptrs.second != nullptr) {
-            gpu::free(_d_queue_ptrs.second);
+            gpu::free(_d_queue_ptrs.second, _max_allocated_items);
         }
 
-        gpu::free(_d_counters);
+        gpu::free(_d_counters, 1);
     }
 #endif
 }

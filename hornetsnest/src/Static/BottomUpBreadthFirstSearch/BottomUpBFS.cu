@@ -119,12 +119,11 @@ BfsBottomUp2::BfsBottomUp2(HornetGraph& hornet, HornetGraph& hornet_in) :
                                  queue(hornet, 5),
                                  queue_inf(hornet),
                                  load_balancing(hornet) {
-    gpu::allocate(d_distances, hornet.nV());
+    pool.allocate(&d_distances, hornet.nV());
     reset();
 }
 
 BfsBottomUp2::~BfsBottomUp2() {
-    gpu::free(d_distances);
 }
 
 void BfsBottomUp2::reset() {
@@ -205,7 +204,6 @@ void BfsBottomUp2::run(HornetGraph& hornet_in) {
 }
 
 void BfsBottomUp2::release() {
-    gpu::free(d_distances);
     d_distances = nullptr;
 }
 

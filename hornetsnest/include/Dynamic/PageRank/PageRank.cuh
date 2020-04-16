@@ -41,6 +41,7 @@
 
 #include "HornetAlg.hpp"
 #include "Static/PageRank/PageRank.cuh"
+#include <BufferPool.cuh>
 
 //namespace hornets_nest {
 namespace hornets_nest {
@@ -70,6 +71,7 @@ struct PrDynamicData : PrData {
 
 //class PageRankDynamic : public StaticAlgorithm<HornetGraph> {
 class PageRankDynamic : public StaticAlgorithm<HornetGPU> {
+  BufferPool pool;
 public:
 //    PageRankDynamic(HornetGraph& hornet,
 //                    HornetGraph& inverted_graph,

@@ -114,12 +114,11 @@ CC::CC(HornetGraph& hornet) : StaticAlgorithm(hornet),
                             queue(hornet),
                             queue_pair(hornet),
                             load_balancing(hornet) {
-    gpu::allocate(d_colors, hornet.nV());
+    pool.allocate(&d_colors, hornet.nV());
     reset();
 }
 
 CC::~CC() {
-    gpu::free(d_colors);
 }
 
 void CC::reset() {
@@ -155,7 +154,6 @@ void CC::run() {
 }
 
 void CC::release() {
-    gpu::free(d_colors);
     d_colors = nullptr;
 }
 
