@@ -121,6 +121,8 @@ int main(int argc, char* argv[]) {
     CommandLineParam cmd(graph, argc, argv,false);
     Timer<DEVICE> TM;
 
+
+
     int numHardwareGPUs=16;
     int numGPUs=8;
     int testSingleFlag=0;
@@ -136,6 +138,9 @@ int main(int argc, char* argv[]) {
 
     if (argc >4)
         testSingleFlag = atoi(argv[4]);
+
+    hornets_nest::gpu::initializeRMMPoolAllocation(1L<<34L,numGPUs);//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
+
 
     cudaSetDevice(0);
 
@@ -166,6 +171,9 @@ int main(int argc, char* argv[]) {
 
     cudaMemset(mgpuGlobalBC,0, sizeof(bc_t)*graph.nV());
 
+    using HornetGraphPtr = HornetGraph*;
+
+    HornetGraphPtr hornetArray[numGPUs];
 
     // Create a single Hornet Graph for each GPU
     #pragma omp parallel
@@ -177,7 +185,15 @@ int main(int argc, char* argv[]) {
 
         HornetInit hornet_init(graph.nV(), graph.nE(), graph.csr_out_offsets(),
                                graph.csr_out_edges());
-        HornetGraph hornet_graph(hornet_init);
+        // HornetGraph hornet_graph(hornet_init);
+        hornetArray[thread_id] =  new HornetGraph(hornet_init);
+    }
+
+    #pragma omp parallel
+    {
+        int64_t thread_id = omp_get_thread_num();
+
+        cudaSetDevice(thread_id);
 
         vid_t* roots = new vid_t[graph.nV()/numGPUs+1];
 
@@ -187,8 +203,7 @@ int main(int argc, char* argv[]) {
             roots[i++]=v;
         }
 
-
-        ApproximateBC abc(hornet_graph,roots,i);
+        ApproximateBC abc(*hornetArray[thread_id],roots,i);
         abc.reset();
         delete[] roots;
 
@@ -216,6 +231,14 @@ int main(int argc, char* argv[]) {
     TM.print("MultiGPU Time");
 
 
+    #pragma omp parallel
+    {
+        int64_t thread_id = omp_get_thread_num();
+        cudaSetDevice(thread_id);
+
+        delete hornetArray[thread_id];
+    }
+
     gpu::free(temp);
 
     bc_t sumM = thrust::reduce(thrust::device, mgpuGlobalBC,mgpuGlobalBC+graph.nV(),0.0);
@@ -227,4 +250,8 @@ int main(int argc, char* argv[]) {
     }
 
     gpu::free(mgpuGlobalBC);
+
+    omp_set_num_threads(original_number_threads);
+    hornets_nest::gpu::finalizeRMMPoolAllocation(numGPUs);
+
 }
