@@ -39,6 +39,7 @@
 #pragma once
 
 #include "HornetAlg.hpp"
+#include <BufferPool.cuh>
 
 
 namespace hornets_nest {
@@ -89,6 +90,7 @@ struct KatzTopKData {
 // Label propogation is based on the values from the previous iteration.
 template <typename HornetGraph>
 class KatzCentralityTopK : public StaticAlgorithm<HornetGraph> {
+  BufferPool pool;
 public:
     KatzCentralityTopK(HornetGraph& hornet, int max_iteration,
                    int K, int max_degree, bool is_static = true);
@@ -220,15 +222,15 @@ KATZCENTRALITYTOPK::KatzCentralityTopK(HornetGraph& hornet, int max_iteration, i
     auto nV = hornet.nV();
 
     if (is_static) {
-        gpu::allocate(hd_katzdata().num_paths_data, nV * 2);
+        pool.allocate(&hd_katzdata().num_paths_data, nV * 2);
         hd_katzdata().num_paths_prev = hd_katzdata().num_paths_data;
         hd_katzdata().num_paths_curr = hd_katzdata().num_paths_data + nV;
         hd_katzdata().num_paths      = nullptr;
         h_paths_ptr                  = nullptr;
     }
     else {
-        gpu::allocate(hd_katzdata().num_paths_data, nV * max_iteration);
-        gpu::allocate(hd_katzdata().num_paths, max_iteration);
+        pool.allocate(&hd_katzdata().num_paths_data, nV * max_iteration);
+        pool.allocate(&hd_katzdata().num_paths, max_iteration);
 
         host::allocate(h_paths_ptr, max_iteration);
         for(int i = 0; i < max_iteration; i++)
@@ -238,15 +240,15 @@ KATZCENTRALITYTOPK::KatzCentralityTopK(HornetGraph& hornet, int max_iteration, i
         hd_katzdata().num_paths_curr = h_paths_ptr[1];
         host::copyToDevice(h_paths_ptr, max_iteration, hd_katzdata().num_paths);
     }
-    gpu::allocate(hd_katzdata().KC,          nV);
-    gpu::allocate(hd_katzdata().lower_bound, nV);
-    gpu::allocate(hd_katzdata().upper_bound, nV);
+    pool.allocate(&hd_katzdata().KC,          nV);
+    pool.allocate(&hd_katzdata().lower_bound, nV);
+    pool.allocate(&hd_katzdata().upper_bound, nV);
 
-    gpu::allocate(hd_katzdata().is_active,             nV);
-    gpu::allocate(hd_katzdata().vertex_array_sorted,   nV);
-    gpu::allocate(hd_katzdata().vertex_array_unsorted, nV);
-    gpu::allocate(hd_katzdata().lower_bound_sorted,    nV);
-    gpu::allocate(hd_katzdata().lower_bound_unsorted,  nV);
+    pool.allocate(&hd_katzdata().is_active,             nV);
+    pool.allocate(&hd_katzdata().vertex_array_sorted,   nV);
+    pool.allocate(&hd_katzdata().vertex_array_unsorted, nV);
+    pool.allocate(&hd_katzdata().lower_bound_sorted,    nV);
+    pool.allocate(&hd_katzdata().lower_bound_unsorted,  nV);
 
     reset();
 }
@@ -273,15 +275,6 @@ void KATZCENTRALITYTOPK::reset() {
 
 template <typename HornetGraph>
 void KATZCENTRALITYTOPK::release(){
-    gpu::free(hd_katzdata().num_paths_data);
-    gpu::free(hd_katzdata().num_paths);
-    gpu::free(hd_katzdata().KC);
-    gpu::free(hd_katzdata().lower_bound);
-    gpu::free(hd_katzdata().upper_bound);
-    gpu::free(hd_katzdata().vertex_array_sorted);
-    gpu::free(hd_katzdata().vertex_array_unsorted);
-    gpu::free(hd_katzdata().lower_bound_sorted);
-    gpu::free(hd_katzdata().lower_bound_unsorted);
     host::free(h_paths_ptr);
 }
 

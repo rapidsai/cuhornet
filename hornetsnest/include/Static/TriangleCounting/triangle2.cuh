@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HornetAlg.hpp"
+#include <BufferPool.cuh>
 
 
 namespace hornets_nest {
@@ -16,6 +17,7 @@ using HornetInit  = ::hornet::HornetInit<vid_t>;
 //==============================================================================
 
 class TriangleCounting2 : public StaticAlgorithm<HornetGraph> {
+  BufferPool pool;
 public:
     TriangleCounting2(HornetGraph& hornet);
     ~TriangleCounting2();

@@ -64,7 +64,7 @@ HostDeviceVar<T>::HostDeviceVar(const HostDeviceVar& obj) noexcept :
 template<typename T>
 HostDeviceVar<T>::~HostDeviceVar() noexcept {
     if (_copy_count == 0)
-        gpu::free(_d_value_ptr);
+        gpu::free(_d_value_ptr, 1);
 }
 
 template<typename T>

@@ -66,12 +66,11 @@ struct SSSPOperator {               //deterministic
 SSSP::SSSP(HornetGraph& hornet) : StaticAlgorithm(hornet),
                                   queue(hornet, 4.0f),
                                   load_balancing(hornet) {
-    gpu::allocate(d_distances, hornet.nV());
+    pool.allocate(&d_distances, hornet.nV());
     reset();
 }
 
 SSSP::~SSSP() {
-    gpu::free(d_distances);
 }
 
 void SSSP::reset() {
@@ -98,7 +97,6 @@ void SSSP::run() {
 }
 
 void SSSP::release() {
-    gpu::free(d_distances);
     d_distances = nullptr;
 }
 

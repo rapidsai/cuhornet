@@ -39,6 +39,7 @@
 #pragma once
 
 #include <HornetAlg.hpp>
+#include <BufferPool.cuh>
 
 #include <cmath>
 #include <thrust/functional.h>
@@ -96,6 +97,8 @@ struct KatzData {
 // Label propogation is based on the values from the previous iteration.
 template <typename HornetGraph>
 class KatzCentrality : public StaticAlgorithm<HornetGraph> {
+protected:
+  BufferPool pool;
 public:
     KatzCentrality(HornetGraph& hornet,
                    double alpha_ = 0.1,
@@ -261,7 +264,7 @@ KATZCENTRALITY::KatzCentrality(HornetGraph& hornet,
         // Static algorithm uses two arrays for storing number of paths.
         // One array is for the current frontier. One array is for the next frontier.
         // These will alternate every iteration.
-        gpu::allocate(hd_katzdata().num_paths_data, nV * 2);
+        pool.allocate(&hd_katzdata().num_paths_data, nV * 2);
         hd_katzdata().num_paths_prev = hd_katzdata().num_paths_data;
         hd_katzdata().num_paths_curr = hd_katzdata().num_paths_data + nV;
         hd_katzdata().num_paths      = nullptr;
@@ -271,8 +274,8 @@ KATZCENTRALITY::KatzCentrality(HornetGraph& hornet,
         // Dynamic algorithm stores the number of paths per iteration.
         // As such the number of iterations might be limited by the amount of available
         // system memory.
-        gpu::allocate(hd_katzdata().num_paths_data, nV * max_iteration);
-        gpu::allocate(hd_katzdata().num_paths, max_iteration);
+        pool.allocate(&hd_katzdata().num_paths_data, nV * max_iteration);
+        pool.allocate(&hd_katzdata().num_paths, max_iteration);
 
         // The host manages the pointers to starting location of the current and next frontiers
         host::allocate(h_paths_ptr, max_iteration);
@@ -284,7 +287,7 @@ KATZCENTRALITY::KatzCentrality(HornetGraph& hornet,
         host::copyToDevice(h_paths_ptr, max_iteration, hd_katzdata().num_paths);
     }
     if (kc_out == nullptr) {
-      gpu::allocate(hd_katzdata().KC,          nV);
+      pool.allocate(&hd_katzdata().KC,          nV);
     } else {
       hd_katzdata().KC = kc_out;
     }
@@ -318,10 +321,7 @@ void KATZCENTRALITY::reset() {
 // Free all allocated resources
 template <typename HornetGraph>
 void KATZCENTRALITY::release(){
-    gpu::free(hd_katzdata().num_paths_data);
-    gpu::free(hd_katzdata().num_paths);
     host::free(h_paths_ptr);
-    if (kc_out_ptr == nullptr) { gpu::free(hd_katzdata().KC); }
 }
 
 

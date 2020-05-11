@@ -35,11 +35,9 @@ add_executable(hornet_mgpu_insert_test            test/HornetMultiGPUInsertTest.
 add_executable(hornet_insert_weighted_test        test/HornetInsertTestWeighted.cu)
 add_executable(hornet_insert_test                 test/HornetInsertTest.cu)
 add_executable(hornet_delete_test                 test/HornetDeleteTest.cu)
-add_executable(rmm_benchmark                      test/RMMBenchmark.cu)
 
 target_link_libraries(hornet_mgpu_insert_test           hornet)
 target_link_libraries(hornet_insert_weighted_test       hornet)
 target_link_libraries(hornet_insert_test                hornet)
 target_link_libraries(hornet_delete_test                hornet)
-target_link_libraries(rmm_benchmark                     hornet)
 

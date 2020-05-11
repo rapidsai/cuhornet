@@ -38,6 +38,7 @@
 #pragma once
 
 #include "HornetAlg.hpp"
+#include <BufferPool.cuh>
 
 namespace hornets_nest {
 
@@ -48,6 +49,7 @@ using HornetInit  = ::hornet::HornetInit<vid_t>;
 using dist_t = int;
 
 class BfsBottomUp2 : public StaticAlgorithm<HornetGraph> {
+  BufferPool pool;
 public:
     BfsBottomUp2(HornetGraph& hornet, HornetGraph& hornet_in);
     ~BfsBottomUp2();

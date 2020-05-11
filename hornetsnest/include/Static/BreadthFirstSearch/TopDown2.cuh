@@ -40,6 +40,7 @@
 #pragma once
 
 #include "HornetAlg.hpp"
+#include <BufferPool.cuh>
 
 namespace hornets_nest {
 
@@ -71,6 +72,7 @@ public:
     dist_t getLevels(){return current_level;}
 
 private:
+    BufferPool pool;
     TwoLevelQueue<vid_t>        queue;
     load_balancing::BinarySearch load_balancing;
     //load_balancing::VertexBased1 load_balancing;
@@ -117,13 +119,12 @@ BFSTOPDOWN2::BfsTopDown2(HornetGraph& hornet) :
                                  StaticAlgorithm<HornetGraph>(hornet),
                                  queue(hornet, 5),
                                  load_balancing(hornet) {
-    gpu::allocate(d_distances, hornet.nV());
+    pool.allocate(&d_distances, hornet.nV());
     reset();
 }
 
 template <typename HornetGraph>
 BFSTOPDOWN2::~BfsTopDown2() {
-    gpu::free(d_distances);
 }
 
 template <typename HornetGraph>
@@ -161,7 +162,6 @@ void BFSTOPDOWN2::run() {
 
 template <typename HornetGraph>
 void BFSTOPDOWN2::release() {
-    gpu::free(d_distances);
     d_distances = nullptr;
 }
 

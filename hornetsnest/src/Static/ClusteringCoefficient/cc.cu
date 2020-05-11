@@ -98,26 +98,23 @@ void ClusteringCoefficient::run(){
     byte_t*  _d_temp_storage     { nullptr };
     size_t _temp_storage_bytes { 0 };
     cub::DeviceReduce::Sum(_d_temp_storage, _temp_storage_bytes,d_ccLocal, d_ccGlobal, _num_items); // Allocating storage needed by CUB for the reduce
-    gpu::allocate(_d_temp_storage, _temp_storage_bytes);
+    pool.allocate(&_d_temp_storage, _temp_storage_bytes);
     cub::DeviceReduce::Sum(_d_temp_storage, _temp_storage_bytes, d_ccLocal, d_ccGlobal, _num_items);
 
     gpu::copyToHost(d_ccGlobal, 1, &h_ccGlobal);
-    gpu::free(_d_temp_storage);
 
     std::cout << "Global CC " << h_ccGlobal/hornet.nV() << std::endl;
  }
 
 
 void ClusteringCoefficient::release(){
-    gpu::free(d_ccLocal);
-    gpu::free(d_ccGlobal);
     d_ccLocal = nullptr;
 }
 
 void ClusteringCoefficient::init(){
     //printf("Inside init. Printing hornet.nV(): %d\n", hornet.nV());
-    gpu::allocate(d_ccLocal, hornet.nV());
-    gpu::allocate(d_ccGlobal, 1);
+    pool.allocate(&d_ccLocal, hornet.nV());
+    pool.allocate(&d_ccGlobal, 1);
 
     TriangleCounting2::init();
     reset();

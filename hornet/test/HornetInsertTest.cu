@@ -52,6 +52,8 @@ int exec(int argc, char* argv[]) {
     init_coo.append(randomBatch);
     init_coo.sort();
 
+    hornet_gpu.sort();
+
     hornet::COO<DeviceType::HOST, vert_t, hornet::EMPTY, eoff_t> host_init_coo = init_coo;
     hornet::COO<DeviceType::HOST, vert_t, hornet::EMPTY, eoff_t> host_inst_coo = inst_coo;
 

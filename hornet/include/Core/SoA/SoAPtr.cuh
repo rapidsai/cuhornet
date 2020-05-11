@@ -43,7 +43,7 @@
 #include <thrust/sequence.h>
 #include <thrust/gather.h>
 #include <thrust/execution_policy.h>
-#include <Device/Util/SafeCudaAPI.cuh>  //cuMalloc
+#include <Device/Util/SafeCudaAPI.cuh>
 #include <Device/Util/SafeCudaAPISync.cuh>
 //#include "BasicTypes.hpp"   //xlib::byte_t
 

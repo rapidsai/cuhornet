@@ -39,6 +39,7 @@
 #pragma once
 
 #include "HornetAlg.hpp"
+#include <BufferPool.cuh>
 
 namespace hornets_nest {
 
@@ -48,6 +49,7 @@ using HornetGraph = ::hornet::gpu::Hornet<vid_t, EMPTY, TypeList<weight_t>>;
 using HornetInit  = ::hornet::HornetInit<vid_t, EMPTY, TypeList<weight_t>>;
 
 class SSSP : public StaticAlgorithm<HornetGraph> {
+  BufferPool pool;
 public:
     SSSP(HornetGraph& hornet);
     ~SSSP();
