@@ -63,21 +63,34 @@ namespace gpu {
     std::exit(EXIT_FAILURE);                                                                \
 } while (0)
 
-void initializeRMMPoolAllocation(const size_t initPoolSize) {
+void initializeRMMPoolAllocation(const size_t initPoolSize, int numGPUs) {
     rmmOptions_t options;
-    options.allocation_mode = PoolAllocation;
-    options.initial_pool_size = initPoolSize;
-    auto result = rmmInitialize(&options);
-    if (result != RMM_SUCCESS) {
-        RMM_ERROR_HANDLER("hornets_nest::gpu::initializeRMMPoolAllocation", "rmmInitialize", result);
+    for(int i=0; i<numGPUs; i++){
+        cudaSetDevice(i);
+        if(initPoolSize==0){
+            options.allocation_mode = CudaDefaultAllocation;
+        }else{
+            options.allocation_mode = PoolAllocation;
+            options.initial_pool_size = initPoolSize;
+        }
+        auto result = rmmInitialize(&options);
+        if (result != RMM_SUCCESS) {
+            RMM_ERROR_HANDLER("hornets_nest::gpu::initializeRMMPoolAllocation", "rmmInitialize", result);
+        }
     }
+    cudaSetDevice(0);
 }
 
-void finalizeRMMPoolAllocation(void) {
-    auto result = rmmFinalize();
-    if (result != RMM_SUCCESS) {
-        RMM_ERROR_HANDLER("hornets_nest::gpu::finalizeRMMPoolAllocation", "rmmFinalize", result);
+void finalizeRMMPoolAllocation(int numGPUs) {
+
+    for(int i=0; i<numGPUs; i++){
+        cudaSetDevice(i);
+        auto result = rmmFinalize();
+        if (result != RMM_SUCCESS) {
+            RMM_ERROR_HANDLER("hornets_nest::gpu::finalizeRMMPoolAllocation", "rmmFinalize", result);
+        }
     }
+    cudaSetDevice(0);
 }
 
 template<typename T>
