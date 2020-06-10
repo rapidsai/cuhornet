@@ -62,8 +62,8 @@ SpMV::SpMV(HornetGraph& hornet, int* h_vector) :
                                 StaticAlgorithm(hornet),
                                 load_balancing(hornet),
                                 h_vector(h_vector) {
-    gpu::allocate(d_vector, hornet.nV());
-    gpu::allocate(d_result, hornet.nV());
+    pool.allocate(&d_vector, hornet.nV());
+    pool.allocate(&d_result, hornet.nV());
     host::copyToDevice(h_vector, hornet.nV(), d_vector);
     reset();
 }
@@ -81,8 +81,6 @@ void SpMV::run() {
 }
 
 void SpMV::release() {
-    gpu::free(d_vector);
-    gpu::free(d_result);
     d_vector = nullptr;
     d_result = nullptr;
 }

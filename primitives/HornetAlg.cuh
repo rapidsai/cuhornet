@@ -138,6 +138,8 @@ public:
     using VertexType = typename HornetClass::VertexType;
     using DegreeType = typename HornetClass::DegreeType;
 
+    HornetClass& getHornet(void) { return hornet; }
+
 protected:
     //the algorithm may change the data structure
     HornetClass& hornet;

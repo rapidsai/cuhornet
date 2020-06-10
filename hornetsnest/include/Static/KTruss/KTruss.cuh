@@ -29,6 +29,7 @@
 #pragma once
 
 #include "HornetAlg.hpp"
+#include <BufferPool.cuh>
 
 namespace hornets_nest {
 
@@ -38,12 +39,19 @@ using triangle_t = vert_t;
 
 using HornetGraph = hornet::gpu::Hornet<vert_t>;
 
-
+template <typename T>
+using HornetGraphWeighted = hornet::gpu::Hornet<vert_t, hornet::EMPTY, hornet::TypeList<T>>;
 
 using HornetInit  = ::hornet::HornetInit<vert_t>;
 
 using UpdatePtr   = ::hornet::BatchUpdatePtr<vert_t, hornet::EMPTY, hornet::DeviceType::DEVICE>;
 using Update      = ::hornet::gpu::BatchUpdate<vert_t>;
+
+template <typename T>
+using UpdatePtrWeighted  = ::hornet::BatchUpdatePtr<vert_t, hornet::TypeList<T>, hornet::DeviceType::DEVICE>;
+
+template <typename T>
+using UpdateWeighted = ::hornet::gpu::BatchUpdate<vert_t, hornet::TypeList<T>>;
 
 
 struct KTrussData {
@@ -78,6 +86,7 @@ struct KTrussData {
 
 // Label propogation is based on the values from the previous iteration.
 class KTruss : public StaticAlgorithm<HornetGraph> {
+  BufferPool pool;
 public:
     KTruss(HornetGraph& hornet);
     ~KTruss();
@@ -94,6 +103,8 @@ public:
 
     void findTrussOfK();
     void runForK(int max_K);
+    int  getGraphEdgeCount(void);
+    void copyGraph(vert_t * src, vert_t * dst);
 
     void createOffSetArray();
     void copyOffsetArrayHost(const vert_t* host_offset_array);
@@ -113,8 +124,50 @@ private:
     vert_t originalNV;
 };
 
+template <typename T>
+class KTrussWeighted : public StaticAlgorithm<HornetGraphWeighted<T>> {
+  BufferPool pool;
+public:
+    KTrussWeighted(HornetGraphWeighted<T>& hornet);
+    ~KTrussWeighted();
+
+    void reset()    override;
+    void run()      override;
+    void release()  override;
+    bool validate() override { return true; }
+
+    //--------------------------------------------------------------------------
+    void setInitParameters(int tsp, int nbl, int shifter,
+                           int blocks, int sps);
+    void init();
+
+    void findTrussOfK();
+    void runForK(int max_K);
+    int  getGraphEdgeCount(void);
+    void copyGraph(vert_t * src, vert_t * dst, T * weight);
+
+    void createOffSetArray();
+    void copyOffsetArrayHost(const vert_t* host_offset_array);
+    void copyOffsetArrayDevice(vert_t* device_offset_array);
+    void resetEdgeArray();
+    void resetVertexArray();
+
+    vert_t getIterationCount();
+    vert_t getMaxK();
+
+    void sortHornet();
+
+private:
+    HornetGraphWeighted<T> &hnt;
+
+    HostDeviceVar<KTrussData> hd_data;
+
+    vert_t originalNE;
+    vert_t originalNV;
+};
 
 } // namespace hornets_nest
 
 
 #include "Static/KTruss/KTruss.impl.cuh"
+#include "Static/KTruss/KTrussWeighted.impl.cuh"

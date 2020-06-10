@@ -58,11 +58,11 @@ StaticPageRank::StaticPageRank(HornetGraph& hornet,
 
     setInputParameters(iteration_max, threshold, damp,isUndirected);
 	hd_prdata().nV = hornet.nV();
-	gpu::allocate(hd_prdata().prev_pr,  hornet.nV() + 1);
-	gpu::allocate(hd_prdata().curr_pr,  hornet.nV() + 1);
-	gpu::allocate(hd_prdata().abs_diff, hornet.nV() + 1);
-	gpu::allocate(hd_prdata().contri,   hornet.nV() + 1);
-	gpu::allocate(hd_prdata().reduction_out, 1);
+	pool.allocate(&hd_prdata().prev_pr,  hornet.nV() + 1);
+	pool.allocate(&hd_prdata().curr_pr,  hornet.nV() + 1);
+	pool.allocate(&hd_prdata().abs_diff, hornet.nV() + 1);
+	pool.allocate(&hd_prdata().contri,   hornet.nV() + 1);
+	pool.allocate(&hd_prdata().reduction_out, 1);
 
 	reset();
 }
@@ -72,12 +72,12 @@ StaticPageRank::~StaticPageRank() {
 }
 
 void StaticPageRank::release() {
-    gpu::free(hd_prdata().prev_pr);
-	gpu::free(hd_prdata().curr_pr);
-	gpu::free(hd_prdata().abs_diff);
-    gpu::free(hd_prdata().contri);
-	gpu::free(hd_prdata().reduction_out);
-    host::free(host_page_rank);
+  hd_prdata().prev_pr = nullptr;
+  hd_prdata().curr_pr = nullptr;
+  hd_prdata().abs_diff = nullptr;
+  hd_prdata().contri = nullptr;
+  hd_prdata().reduction_out = nullptr;
+  host::free(host_page_rank);
 }
 
 void StaticPageRank::reset(){
@@ -139,8 +139,8 @@ void StaticPageRank::run() {
 void StaticPageRank::printRankings() {
     pr_t*  d_scores, *h_scores;
     vid_t* d_ids, *h_ids;
-    gpu::allocate(d_scores,  hornet.nV());
-    gpu::allocate(d_ids,     hornet.nV());
+    pool.allocate(&d_scores,  hornet.nV());
+    pool.allocate(&d_ids,     hornet.nV());
     host::allocate(h_scores, hornet.nV());
     host::allocate(h_ids,    hornet.nV());
 
@@ -161,8 +161,6 @@ void StaticPageRank::printRankings() {
     host::copyFromDevice(hd_prdata().reduction_out, h_out);
 	std::cout << "              " << std::setprecision(9) << h_out << std::endl;
 
-	gpu::free(d_scores);
-	gpu::free(d_ids);
 	host::free(h_scores);
 	host::free(h_ids);
 }

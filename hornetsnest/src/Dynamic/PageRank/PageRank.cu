@@ -109,11 +109,11 @@ PageRankDynamic::PageRankDynamic(HornetGPU& hornet, ////HornetGraph& hornet,
     hd_prdata().queueDlt.initialize(hornet);//initialize(hornet);
 
     printf("------------- dynamic pr 2");
-    gpu::allocate(hd_prdata().visited,    hornet.nV());
-    gpu::allocate(hd_prdata().visitedDlt, hornet.nV());
-    gpu::allocate(hd_prdata().usedOld,    hornet.nV());
-    gpu::allocate(hd_prdata().diffPR,     hornet.nV());
-    gpu::allocate(hd_prdata().delta,      hornet.nV());
+    pool.allocate(&hd_prdata().visited,    hornet.nV());
+    pool.allocate(&hd_prdata().visitedDlt, hornet.nV());
+    pool.allocate(&hd_prdata().usedOld,    hornet.nV());
+    pool.allocate(&hd_prdata().diffPR,     hornet.nV());
+    pool.allocate(&hd_prdata().delta,      hornet.nV());
 
     //printf("------------- dynamic pr 2");
     std::cerr<<"------------- dynamic pr 2";
@@ -146,11 +146,6 @@ void PageRankDynamic::run() {
 }
 
 void PageRankDynamic::release(){
-    gpu::free(hd_prdata().visited);
-    gpu::free(hd_prdata().visitedDlt);
-    gpu::free(hd_prdata().usedOld);
-    gpu::free(hd_prdata().diffPR);
-    gpu::free(hd_prdata().delta);
 }
 
 bool PageRankDynamic::validate() {

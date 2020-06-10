@@ -54,9 +54,9 @@ KatzCentralityDynamic::KatzCentralityDynamic(HornetGraph& hornet,
 
     hd_katzdata().active_queue.initialize(hornet);
 
-    gpu::allocate(hd_katzdata().new_paths_curr, hornet.nV());
-    gpu::allocate(hd_katzdata().new_paths_prev, hornet.nV());
-    gpu::allocate(hd_katzdata().active,         hornet.nV());
+    pool.allocate(&hd_katzdata().new_paths_curr, hornet.nV());
+    pool.allocate(&hd_katzdata().new_paths_prev, hornet.nV());
+    pool.allocate(&hd_katzdata().active,         hornet.nV());
 
     hd_katzdata = kc_static.katz_data();
 
@@ -80,9 +80,9 @@ KatzCentralityDynamic::KatzCentralityDynamic(HornetGraph& hornet,
 
     hd_katzdata().active_queue.initialize(hornet);
 
-    gpu::allocate(hd_katzdata().new_paths_curr, hornet.nV());
-    gpu::allocate(hd_katzdata().new_paths_prev, hornet.nV());
-    gpu::allocate(hd_katzdata().active,         hornet.nV());
+    pool.allocate(&hd_katzdata().new_paths_curr, hornet.nV());
+    pool.allocate(&hd_katzdata().new_paths_prev, hornet.nV());
+    pool.allocate(&hd_katzdata().active,         hornet.nV());
 
     hd_katzdata = kc_static.katz_data();
 
@@ -110,9 +110,6 @@ void KatzCentralityDynamic::run_static() {
 }
 
 void KatzCentralityDynamic::release(){
-    gpu::free(hd_katzdata().new_paths_curr);
-    gpu::free(hd_katzdata().new_paths_prev);
-    gpu::free(hd_katzdata().active);
 }
 
 //==============================================================================

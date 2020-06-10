@@ -74,8 +74,8 @@ public:
 
     using DegreeType = degree_t;
 
-
     using FlatCOO = SoAData<TypeList<vid_t, vid_t, EdgeMetaTypes...>, DeviceType::DEVICE>;
+
 private:
 
     static int _instance_count;
@@ -128,6 +128,7 @@ public:
 
     void reset(HInitT& h_init) noexcept;
 
+    void sort(void);
 };
 
 #define HORNET Hornet<vid_t,\
@@ -148,5 +149,6 @@ class IsHornet<gpu::Hornet<V, VM, EM, D>> : public std::true_type {};
 #include "Core/HornetInitialize/HornetInitialize.i.cuh"
 #include "Core/HornetOperations/HornetInsert.i.cuh"
 #include "Core/HornetOperations/HornetQuery.i.cuh"
+#include "Core/HornetOperations/HornetSort.i.cuh"
 
 #endif

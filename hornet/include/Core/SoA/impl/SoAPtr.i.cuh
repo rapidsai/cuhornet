@@ -50,21 +50,23 @@ namespace hornet {
 template<int N, int SIZE>
 struct RecursiveFillNull {
   template<typename degree_t, typename... Ts>
-  static void fillNull(SoAPtr<Ts...> ptr, degree_t length) {
-    auto tptr = thrust::device_pointer_cast(ptr.template get<N>());
-    thrust::fill(tptr, tptr + length,
-         static_cast<typename xlib::SelectType<N, Ts...>::type>(0));
-    RecursiveFillNull<N+1, SIZE>::fillNull(ptr, length);
+  static void fillNull(SoAPtr<Ts...> ptr, degree_t length, DeviceType device_t) {
+    if (device_t == DeviceType::DEVICE) {
+      auto tptr = thrust::device_pointer_cast(ptr.template get<N>());
+      thrust::fill(tptr, tptr + length,
+          static_cast<typename xlib::SelectType<N, Ts...>::type>(0));
+    } else {
+      thrust::fill(thrust::host, ptr.template get<N>(), ptr.template get<N>() + length,
+          static_cast<typename xlib::SelectType<N, Ts...>::type>(0));
+    }
+    RecursiveFillNull<N+1, SIZE>::fillNull(ptr, length, device_t);
   }
 };
 
 template<int N>
 struct RecursiveFillNull<N, N> {
   template<typename degree_t, typename... Ts>
-  static void fillNull(SoAPtr<Ts...> ptr, degree_t length) {
-    auto tptr = thrust::device_pointer_cast(ptr.template get<N>());
-    thrust::fill(tptr, tptr + length,
-         static_cast<typename xlib::SelectType<N, Ts...>::type>(0));
+  static void fillNull(SoAPtr<Ts...> ptr, degree_t length, DeviceType device_t) {
   }
 };
 
@@ -643,6 +645,7 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degre
             rmm::exec_policy(stream)->on(stream),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), range.begin())) );
+    //FIXME : Check correctness of RecursiveCopy and RecursiveGather template parameters
     RecursiveCopy<0, 2>::copy(in_ptr, DeviceType::DEVICE, out_ptr, DeviceType::DEVICE, nE);
     RecursiveGather<2, sizeof...(EdgeTypes)>::assign(in_ptr, out_ptr, range, nE);
     return true;

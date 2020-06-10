@@ -38,7 +38,7 @@
 
 #include "../Conf/Common.cuh"
 #include "SoAPtr.cuh"
-#include <Device/Util/SafeCudaAPI.cuh>  //cuMalloc
+#include <Device/Util/SafeCudaAPI.cuh>
 #include <Device/Util/SafeCudaAPISync.cuh>
 #include <thrust/device_vector.h>
 #include <thrust/gather.h>
@@ -57,19 +57,25 @@ template <typename, DeviceType = DeviceType::DEVICE> class CSoAData;
 template<typename... Ts, DeviceType device_t>
 class SoAData<TypeList<Ts...>, device_t> {
     template<typename, DeviceType> friend class SoAData;
+
+    template <typename T>
+    using VectorType = typename
+    std::conditional<
+    (device_t == DeviceType::DEVICE),
+    typename rmm::device_vector<T>,
+    typename thrust::host_vector<T>>::type;
+
     int           _num_items;
 
     int            _capacity;
 
     SoAPtr<Ts...> _soa;
 
+    std::tuple<VectorType<Ts>...> _data;
+
     public:
     template <typename T>
-    using Map = typename
-    std::conditional<
-    (device_t == DeviceType::DEVICE),
-    typename rmm::device_vector<T>,
-    typename thrust::host_vector<T>>::type;
+    using Map = VectorType<T>;
 
     SoAData(const int num_items = 0, bool initToZero = false) noexcept;
 
@@ -110,10 +116,18 @@ class SoAData<TypeList<Ts...>, device_t> {
 
 template<typename... Ts, DeviceType device_t>
 class CSoAData<TypeList<Ts...>, device_t> {
+    using BufferType = typename
+    std::conditional<
+    (device_t == DeviceType::DEVICE),
+    typename rmm::device_vector<xlib::byte_t>,
+    typename thrust::host_vector<xlib::byte_t>>::type;
+
     template<typename, DeviceType> friend class CSoAData;
     int            _num_items;
 
     int             _capacity;
+
+    BufferType _data;
 
     CSoAPtr<Ts...> _soa;
 
@@ -133,9 +147,6 @@ class CSoAData<TypeList<Ts...>, device_t> {
     //template<DeviceType d_t>
     //CSoAData(const CSoAData<TypeList<Ts...>, d_t>& other) noexcept;
 
-    template<DeviceType d_t>
-    CSoAData(CSoAData<TypeList<Ts...>, d_t>&& other) noexcept;
-
     CSoAPtr<Ts...>& get_soa_ptr(void) noexcept;
 
     const CSoAPtr<Ts...>& get_soa_ptr(void) const noexcept;
@@ -143,6 +154,8 @@ class CSoAData<TypeList<Ts...>, device_t> {
     void copy(SoAPtr<Ts const...> other, DeviceType other_d_t, int other_num_items) noexcept;
 
     void copy(SoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept;
+
+    void copy(CSoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept;
 
     template<DeviceType d_t>
     void copy(CSoAData<TypeList<Ts...>, d_t>&& other) noexcept;
@@ -152,6 +165,8 @@ class CSoAData<TypeList<Ts...>, device_t> {
     void resize(const int resize_items) noexcept;
 
     DeviceType get_device_type(void) noexcept;
+
+    void segmented_sort(int segment_length_log2);
 };
 
 
@@ -170,4 +185,5 @@ void print_soa(CSoAData<TypeList<Ts...>, DeviceType::DEVICE>& data);
 }
 
 #include "impl/SoAData.i.cuh"
+#include "impl/SoADataSort.i.cuh"
 #endif

@@ -96,17 +96,8 @@ int cuGetDevice() noexcept;
     xlib::detail::cuGetSymbolAddressAux(__FILE__, __LINE__, __func__,          \
                                         symbol, ptr)                           \
 
-#define cuMalloc(...)                                                          \
-    xlib::detail::cuMallocAux(__FILE__, __LINE__, __func__, __VA_ARGS__)       \
-
-#define cuMalloc2D(...)                                                        \
-    xlib::detail::cuMalloc2DAux(__FILE__, __LINE__, __func__, __VA_ARGS__)     \
-
 #define cuMallocHost(...)                                                      \
     xlib::detail::cuMallocHostAux(__FILE__, __LINE__, __func__, __VA_ARGS__)   \
-
-#define cuFree(...)                                                            \
-    xlib::detail::cuFreeAux(__FILE__, __LINE__, __func__, __VA_ARGS__)         \
 
 #define cuFreeHost(...)                                                        \
     xlib::detail::cuFreeHostAux(__FILE__, __LINE__, __func__, __VA_ARGS__)     \
@@ -189,16 +180,6 @@ void cuGetSymbolAddressAux(const char* file, int line, const char* func_name,
     std::exit(EXIT_FAILURE);                                                                \
 } while (0)
 
-template<typename T>
-void cuMallocAux(const char* file, int line, const char* func_name,
-                 T*& ptr, size_t num_items) noexcept {
-    assert(num_items > 0);
-    auto result = RMM_ALLOC(&ptr, num_items * sizeof(T), 0);//by default, use the default stream
-    if (result != RMM_SUCCESS) {
-        RMM_ERROR_HANDLER("cuMalloc", "rmmAlloc", result);
-    }
-}
-
 //------------------------------------------------------------------------------
 template<typename T>
 size_t byte_size(T* ptr, size_t num_items) noexcept {
@@ -233,26 +214,6 @@ void cuMallocAux(const char* file, int line, const char* func_name,
     set_ptr(base_ptr, std::forward<TArgs>(args)...);
 }*/
 
-template<typename T>
-void cuMalloc2DAux(const char* file, int line, const char* func_name,
-                   T*& pointer, size_t rows, size_t cols) noexcept {
-    assert(rows > 0 && cols > 0);
-    cudaErrorHandler(cudaMalloc(&pointer, rows * cols * sizeof(T)),
-                     "cudaMalloc2D", file, line, func_name);
-}
-
-template<typename T>
-void cuMalloc2DAux(const char* file, int line, const char* func_name,
-                   T*& pointer, size_t rows, size_t cols, size_t& pitch)
-                   noexcept {
-    assert(rows > 0 && cols > 0);
-    cudaErrorHandler(cudaMallocPitch(&pointer, &pitch,
-                                     rows * sizeof(T)), cols,
-                    "cudaMalloc2D", file, line, func_name);
-    assert(pitch % sizeof(T) == 0);
-    pitch /= sizeof(T);
-}
-
 template<typename... TArgs>
 void cuMallocHostAux(const char* file, int line, const char* func_name,
                      TArgs&&... args) noexcept {
@@ -263,78 +224,6 @@ void cuMallocHostAux(const char* file, int line, const char* func_name,
                      "cudaMalloc", file, line, func_name);
     set_ptr(base_ptr, std::forward<TArgs>(args)...);
 }
-
-//==============================================================================
-//////////////
-//  cuFree  //
-//////////////
-
-template<typename T>
-typename std::enable_if<std::is_pointer<T>::value>::type
-cuFreeAux(const char* file, int line, const char* func_name, T& ptr)  noexcept {
-    if (ptr != nullptr) {
-    using R    = typename xlib::remove_const_ptr<T>::type;
-    auto& ptr1 = const_cast<R&>(ptr);
-    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
-    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-    ptr1 = nullptr;
-    }
-}
-
-template<typename T, typename... TArgs>
-typename std::enable_if<std::is_pointer<T>::value>::type
-cuFreeAux(const char* file, int line, const char* func_name,
-          T& ptr, TArgs*... ptrs) noexcept {
-    if (ptr != nullptr) {
-    using R    = typename xlib::remove_const_ptr<T>::type;
-    auto& ptr1 = const_cast<R&>(ptr);
-    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
-    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-    ptr1 = nullptr;
-    }
-    cuFreeAux(file, line, func_name, ptrs...);
-}
-
-template<typename T, int SIZE>
-void cuFreeAux(const char* file, int line, const char* func_name,
-               const T* (&ptr)[SIZE]) noexcept {
-    using R = typename std::remove_cv<T*>::type;
-    for (int i = 0; i < SIZE; i++) {
-        auto ptr1 = const_cast<R>(ptr[i]);
-    auto result = RMM_FREE(ptr1, 0);//by default, use the default stream
-    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-    }
-}
-
-template<typename T, int SIZE>
-void cuFreeAux(const char* file, int line, const char* func_name,
-               T* (&ptr)[SIZE]) noexcept {
-    for (int i = 0; i < SIZE; i++) {
-    auto result = RMM_FREE(ptr[i], 0);//by default, use the default stream
-    if (result != RMM_SUCCESS) { RMM_ERROR_HANDLER("cuFree", "rmmFree", result); }
-        ptr[i] = nullptr;
-    }
-}
-
-//------------------------------------------------------------------------------
-/*
-template<typename T>
-typename std::enable_if<std::is_pointer<T>::value &&
-                        !std::is_const<T>::value>::type
-cuFreeAux(const char* file, int line, const char* func_name, T& ptr) noexcept {
-    cudaErrorHandler(cudaFree(ptr), "cudaFree", file, line, func_name);
-    ptr = nullptr;
-}
-
-template<typename T, typename... TArgs>
-typename std::enable_if<std::is_pointer<T>::value &&
-                        !std::is_const<T>::value>::type
-cuFreeAux(const char* file, int line, const char* func_name,
-          T& ptr, TArgs... ptrs) noexcept {
-    cudaErrorHandler(cudaFree(ptr), "cudaFree", file, line, func_name);
-    ptr = nullptr;
-    cuFreeAux(file, line, func_name, ptrs...);
-}*/
 
 //------------------------------------------------------------------------------
 

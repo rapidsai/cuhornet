@@ -42,163 +42,106 @@ using namespace rmm;
 namespace hornet {
 
 //==============================================================================
-//////////////////////////////////////
-// Device Specialized De/Allocation //
-//////////////////////////////////////
+/////////////////////////
+// AllocateTupleVector //
+/////////////////////////
 
-//Avoiding specialization for hornetsnest
-template<DeviceType device_t>
-xlib::byte_t* allocate(const typename std::enable_if<(device_t == DeviceType::DEVICE), int>::type
-        num_bytes) {
-    xlib::byte_t* ptr = nullptr;
-    if (num_bytes > 0) {
-        cuMalloc(ptr, num_bytes);
-    }
-    return ptr;
-}
-
-template<DeviceType device_t>
-void deallocate(typename std::enable_if<(device_t == DeviceType::DEVICE), xlib::byte_t>::type *
-        ptr) {
-    if (ptr != nullptr) {
-        cuFree(ptr);
-    }
-}
-
-template<DeviceType device_t>
-xlib::byte_t* allocate(const typename std::enable_if<(device_t == DeviceType::HOST), int>::type
-        num_bytes) {
-    xlib::byte_t* ptr = nullptr;
-    if (num_bytes > 0) {
-        ptr = new xlib::byte_t[num_bytes];
-    }
-    return ptr;
-}
-
-template<DeviceType device_t>
-void deallocate(typename std::enable_if<(device_t == DeviceType::HOST), xlib::byte_t>::type *
- ptr) {
-    if (ptr != nullptr) {
-        delete[] ptr;
-    }
-}
-
-//==============================================================================
-////////////////////
-// AllocateBuffer //
-////////////////////
-
-template<int N, DeviceType device_t>
-struct AllocateBuffer {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void allocate(Contnr<Ts...>& c, const int num_items) {
-        typename xlib::SelectType<N, Ts*...>::type ptr;
-        cuMalloc(ptr, num_items);
-        c.template set<N>(ptr);
+template<int N, int SIZE>
+struct AllocateTupleVector {
+    template <typename... Ts>
+    static void allocate(std::tuple<Ts...>& c, const size_t num_items) {
+        std::get<N>(c).clear();
+        std::get<N>(c).resize(num_items);
+        AllocateTupleVector<N+1, SIZE>::allocate(c, num_items);
     }
 };
 
 template<int N>
-struct AllocateBuffer<N, DeviceType::HOST> {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void allocate(Contnr<Ts...>& c, const int num_items) {
-        using val_t = typename xlib::SelectType<N, Ts...>::type;
-        val_t* ptr = new val_t[num_items];
-        c.template set<N>(ptr);
+struct AllocateTupleVector<N, N> {
+    template <typename... Ts>
+    static void allocate(std::tuple<Ts...>& c, const size_t num_items) {
     }
 };
 
-//==============================================================================
-//////////////////////
-// DeallocateBuffer //
-//////////////////////
+template <typename... Ts>
+void allocate_tuple_vector(std::tuple<Ts...>& c, const size_t num_items) {
+  AllocateTupleVector<0, sizeof...(Ts)>::
+    allocate(c, num_items);
+}
 
-template<int N, DeviceType device_t>
-struct DeallocateBuffer {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void deallocate(Contnr<Ts...>& c) {
-        typename xlib::SelectType<N, Ts*...>::type ptr = c.template get<N>();
-        cuFree(ptr);
-        c.template set<N>(nullptr);
+//==============================================================================
+///////////////
+// SetSoAPtr //
+///////////////
+
+template <typename T>
+T*
+get_ptr(rmm::device_vector<T>& t) {
+  return t.data().get();
+}
+
+template <typename T>
+T*
+get_ptr(thrust::host_vector<T>& t) {
+  return t.data();
+}
+
+template<int N, int SIZE>
+struct SetSoAPtr {
+    template <typename T1, typename T2>
+    static void set(T1& c, T2& ptr) {
+        ptr.template set<N>(get_ptr(std::get<N>(c)));
+        SetSoAPtr<N+1, SIZE>::set(c, ptr);
     }
 };
 
 template<int N>
-struct DeallocateBuffer<N, DeviceType::HOST> {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void deallocate(Contnr<Ts...>& c) {
-        delete[] c.template get<N>();
-        c.template set<N>(nullptr);
+struct SetSoAPtr<N, N> {
+    template <typename T1, typename T2>
+    static void set(T1& c, T2& ptr) {
     }
 };
+
+template <typename T1, typename T2>
+void set_soa_ptr(T1& c, T2& ptr) {
+    SetSoAPtr<0, std::tuple_size<T1>::value>::set(c, ptr);
+}
+
+template <typename... Ts>
+SoAPtr<Ts...> allocate_data(std::tuple<Ts...>& c, const size_t num_items) {
+  AllocateTupleVector<0, sizeof...(Ts)>::
+    allocate(c, num_items);
+  SoAPtr<Ts...> ptr;
+  set_soa_ptr(c, ptr);
+  return ptr;
+}
 
 //==============================================================================
-///////////////////
-// RecursiveMove //
-///////////////////
+/////////////////
+// TupleResize //
+/////////////////
 
-template<int N, int SIZE, DeviceType device_t>
-struct RecursiveMove {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void move(Contnr<Ts...>& c_src, Contnr<Ts...>& c_dst) {
-        c_dst.template set<N>(c_src.template get<N>());
-        c_src.template set<N>(nullptr);
-        RecursiveMove<N+1, SIZE, device_t>::move(c_src, c_dst);
+template<int N, int SIZE>
+struct TupleResize {
+    template <typename... Ts>
+    static void resize(std::tuple<Ts...>& c, const size_t num_items) {
+        std::get<N>(c).resize(num_items);
+        TupleResize<N+1, SIZE>::resize(c, num_items);
     }
 };
 
-template<int N, DeviceType device_t>
-struct RecursiveMove<N, N, device_t> {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void move(Contnr<Ts...>& c_src, Contnr<Ts...>& c_dst) {
-        c_dst.template set<N>(c_src.template get<N>());
-        c_src.template set<N>(nullptr);
+template<int N>
+struct TupleResize<N, N> {
+    template <typename... Ts>
+    static void resize(std::tuple<Ts...>& c, const size_t num_items) {
     }
 };
 
-//==============================================================================
-///////////////////////
-// RecursiveAllocate //
-///////////////////////
-
-template<int N, int SIZE, DeviceType device_t>
-struct RecursiveAllocate {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void allocate(Contnr<Ts...>& c, const int num_items) {
-        AllocateBuffer<N, device_t>::allocate(c, num_items);
-        RecursiveAllocate<N+1, SIZE, device_t>::allocate(c, num_items);
-    }
-};
-
-template<int N, DeviceType device_t>
-struct RecursiveAllocate<N, N, device_t> {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void allocate(Contnr<Ts...>& c, const int num_items) {
-        AllocateBuffer<N, device_t>::allocate(c, num_items);
-    }
-};
-
-//==============================================================================
-/////////////////////////
-// RecursiveDeallocate //
-/////////////////////////
-
-template<int N, int SIZE, DeviceType device_t>
-struct RecursiveDeallocate {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void deallocate(Contnr<Ts...>& c) {
-        DeallocateBuffer<N, device_t>::deallocate(c);
-        RecursiveDeallocate<N+1, SIZE, device_t>::deallocate(c);
-    }
-};
-
-template<int N, DeviceType device_t>
-struct RecursiveDeallocate<N, N, device_t> {
-    template<template <typename...> typename Contnr, typename... Ts>
-    static void deallocate(Contnr<Ts...>& c) {
-        DeallocateBuffer<N, device_t>::deallocate(c);
-    }
-};
+template <typename... Ts>
+void tuple_resize(std::tuple<Ts...>& c, const size_t num_items) {
+  TupleResize<0, sizeof...(Ts)>::
+    resize(c, num_items);
+}
 
 //==============================================================================
 //////////////////////
@@ -319,9 +262,11 @@ SoAData<TypeList<Ts...>, device_t>::
 SoAData(const int num_items, bool initToZero) noexcept :
 _num_items(num_items), _capacity(num_items) {
     if (num_items != 0) {
-        RecursiveAllocate<0, sizeof...(Ts) - 1, device_t>::allocate(_soa, _capacity);
+        allocate_tuple_vector(_data, static_cast<size_t>(_capacity));
+        set_soa_ptr(_data, _soa);
+
         if (initToZero) {
-          RecursiveFillNull<0, sizeof...(Ts) - 1>::fillNull(_soa, _capacity);
+          setEmpty();
         }
     }
 }
@@ -333,28 +278,29 @@ SoAData(SoAData<TypeList<Ts...>, d_t>&& other) noexcept :
 _num_items(other._num_items), _capacity(other._capacity) {
     if (d_t != device_t) {
         //If other's device type is different, do not alter its variables
-        RecursiveAllocate<0, sizeof...(Ts) - 1, device_t>::allocate(_soa, _capacity);
+
+        allocate_tuple_vector(_data, static_cast<size_t>(_capacity));
+        set_soa_ptr(_data, _soa);
         RecursiveCopy<0, sizeof...(Ts) - 1>::copy(other._soa, d_t, _soa, device_t, _num_items);
     } else {
-        RecursiveMove<0, sizeof...(Ts) - 1, device_t>::move(other._soa, _soa);
+        _data = std::move(other._data);
         RecursiveSetNull<0, sizeof...(Ts) - 1>::set_null(other._soa);
         other._num_items = 0;
         other._capacity = 0;
     }
+    set_soa_ptr(_data, _soa);
 }
 
 template<typename... Ts, DeviceType device_t>
 SoAData<TypeList<Ts...>, device_t>::
 ~SoAData(void) noexcept {
-    RecursiveDeallocate<0, sizeof...(Ts) - 1, device_t>::deallocate(_soa);
 }
 
 template<typename... Ts, DeviceType device_t>
 SoAData<TypeList<Ts...>, device_t>&
 SoAData<TypeList<Ts...>, device_t>::
 operator=(SoAData<TypeList<Ts...>, device_t>&& other) {
-    RecursiveDeallocate<0, sizeof...(Ts) - 1, device_t>::deallocate(_soa);
-    RecursiveMove<0, sizeof...(Ts) - 1, device_t>::move(other._soa, _soa);
+    _data = std::move(other._data);
     RecursiveSetNull<0, sizeof...(Ts) - 1>::set_null(other._soa);
     _num_items = other._num_items;
     _capacity = other._capacity;
@@ -410,10 +356,15 @@ SoAData<TypeList<Ts...>, device_t>::
 sort(void) noexcept {
   rmm::device_vector<int> range;
   if (sizeof...(Ts) > 3) {
+
+    std::tuple<VectorType<Ts>...> temp_data;
+    allocate_tuple_vector(temp_data, static_cast<size_t>(_num_items));
     SoAPtr<Ts...> temp_soa;
-    RecursiveAllocate<0, sizeof...(Ts) - 1, device_t>::allocate(temp_soa, _num_items);
+    set_soa_ptr(temp_data, temp_soa);
+
     sort_batch(_soa, _num_items, range, temp_soa);
-    RecursiveDeallocate<0, sizeof...(Ts) - 1, device_t>::deallocate(_soa);
+
+    _data = std::move(temp_data);
     _soa = temp_soa;
   } else {
     SoAPtr<Ts...> temp_soa;
@@ -440,12 +391,9 @@ template<typename... Ts, DeviceType device_t>
 void
 SoAData<TypeList<Ts...>, device_t>::
 resize(const int resize_items) noexcept {
+    tuple_resize(_data, resize_items);
+    set_soa_ptr(_data, _soa);
     if (resize_items > _capacity) {
-        SoAPtr<Ts...> temp_soa;
-        RecursiveAllocate<0, sizeof...(Ts) - 1, device_t>::allocate(temp_soa, resize_items);
-        RecursiveCopy<0, sizeof...(Ts) - 1>::copy(_soa, device_t, temp_soa, device_t, _num_items);
-        RecursiveDeallocate<0, sizeof...(Ts) - 1, device_t>::deallocate(_soa);
-        _soa = temp_soa;
         _capacity = resize_items;
     }
     _num_items = resize_items;
@@ -462,7 +410,7 @@ template<typename... Ts, DeviceType device_t>
 void
 SoAData<TypeList<Ts...>, device_t>::
 setEmpty(void) noexcept {
-  RecursiveFillNull<0, sizeof...(Ts) - 1>::fillNull(_soa, _capacity);
+  RecursiveFillNull<0, sizeof...(Ts)>::fillNull(_soa, _capacity, device_t);
 }
 
 //==============================================================================
@@ -474,12 +422,14 @@ template<typename... Ts, DeviceType device_t>
 CSoAData<TypeList<Ts...>, device_t>::
 CSoAData(const int num_items) noexcept :
 _num_items(num_items), _capacity(xlib::upper_approx<512>(num_items)),
-_soa(allocate<device_t>(xlib::SizeSum<Ts...>::value * _capacity), _capacity) {}
+_data(xlib::SizeSum<Ts...>::value * _capacity),
+_soa(get_ptr(_data), _capacity) {}
 
 template<typename... Ts, DeviceType device_t>
 CSoAData<TypeList<Ts...>, device_t>::
 CSoAData(CSoAData<TypeList<Ts...>, device_t>&& other) noexcept :
 _num_items(other._num_items), _capacity(xlib::upper_approx<512>(_num_items)),
+_data(std::move(other._data)),
 _soa(nullptr, 0) {
     _soa = other._soa;
     other._soa = CSoAPtr<Ts...>(nullptr, 0);
@@ -491,7 +441,7 @@ template<typename... Ts, DeviceType device_t>
 CSoAData<TypeList<Ts...>, device_t>&
 CSoAData<TypeList<Ts...>, device_t>::
 operator=(CSoAData<TypeList<Ts...>, device_t>&& other) {
-    deallocate<device_t>(reinterpret_cast<xlib::byte_t*>(_soa.template get<0>()));
+    _data = std::move(other._data);
     _soa = other._soa;
     other._soa = CSoAPtr<Ts...>(nullptr, 0);
     other._num_items = 0;
@@ -500,30 +450,8 @@ operator=(CSoAData<TypeList<Ts...>, device_t>&& other) {
 }
 
 template<typename... Ts, DeviceType device_t>
-template<DeviceType d_t>
-CSoAData<TypeList<Ts...>, device_t>::
-CSoAData(CSoAData<TypeList<Ts...>, d_t>&& other) noexcept :
-_num_items(other._num_items), _capacity(other._capacity),
-_soa(nullptr, 0) {
-    if (d_t != device_t) {
-        //If other's device type is different, do not alter its variables
-        _soa =
-            CSoAPtr<Ts...>(
-                    allocate<device_t>(xlib::SizeSum<Ts...>::value * _capacity),
-                    _capacity);
-        copy(other);
-    } else {
-        _soa = other._soa;
-        other._soa = CSoAPtr<Ts...>(nullptr, 0);
-        other._num_items = 0;
-        other._capacity = 0;
-    }
-}
-
-template<typename... Ts, DeviceType device_t>
 CSoAData<TypeList<Ts...>, device_t>::
 ~CSoAData(void) noexcept {
-    deallocate<device_t>(reinterpret_cast<xlib::byte_t*>(_soa.template get<0>()));
 }
 
 template<typename... Ts, DeviceType device_t>
@@ -552,6 +480,14 @@ template<typename... Ts, DeviceType device_t>
 void
 CSoAData<TypeList<Ts...>, device_t>::
 copy(SoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept {
+    int _item_count = std::min(other_num_items, _num_items);
+    RecursiveCopy<0, sizeof...(Ts) - 1>::copy(other, other_d_t, _soa, device_t, _item_count);
+}
+
+template<typename... Ts, DeviceType device_t>
+void
+CSoAData<TypeList<Ts...>, device_t>::
+copy(CSoAPtr<Ts...> other, DeviceType other_d_t, int other_num_items) noexcept {
     int _item_count = std::min(other_num_items, _num_items);
     RecursiveCopy<0, sizeof...(Ts) - 1>::copy(other, other_d_t, _soa, device_t, _item_count);
 }
@@ -591,12 +527,13 @@ CSoAData<TypeList<Ts...>, device_t>::
 resize(const int resize_items) noexcept {
     int new_capacity = xlib::upper_approx<512>(resize_items);
     if (new_capacity > _capacity) {
-        CSoAPtr<Ts...> temp_soa(
-                allocate<device_t>(xlib::SizeSum<Ts...>::value * new_capacity),
-                new_capacity);
+
+        BufferType temp_data(xlib::SizeSum<Ts...>::value * new_capacity);
+        CSoAPtr<Ts...> temp_soa(get_ptr(temp_data), new_capacity);
+
         RecursiveCopy<0, sizeof...(Ts) - 1>::copy(
                 _soa, device_t, temp_soa, device_t, _num_items);
-        deallocate<device_t>(reinterpret_cast<xlib::byte_t*>(_soa.template get<0>()));
+        _data = std::move(temp_data);
         _soa = temp_soa;
         _capacity = new_capacity;
     }

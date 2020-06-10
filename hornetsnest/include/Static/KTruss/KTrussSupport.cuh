@@ -25,19 +25,21 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#ifndef KTRUSS_SUPPORT_CUH
+#define KTRUSS_SUPPORT_CUH
 
 namespace hornets_nest {
 
 
+template <typename V, typename D>
 __device__ __forceinline__
-void initialize(degree_t diag_id,
-                degree_t u_len,
-                degree_t v_len,
-                vert_t* __restrict__ u_min,
-                vert_t* __restrict__ u_max,
-                vert_t* __restrict__ v_min,
-                vert_t* __restrict__ v_max,
+void initialize(D diag_id,
+                D u_len,
+                D v_len,
+                V* __restrict__ u_min,
+                V* __restrict__ u_max,
+                V* __restrict__ v_min,
+                V* __restrict__ v_max,
                 int*   __restrict__ found) {
     if (diag_id == 0) {
         *u_min = *u_max = *v_min = *v_max = 0;
@@ -63,9 +65,10 @@ void initialize(degree_t diag_id,
     }
 }
 
+template <typename D>
 __device__ __forceinline__
-void workPerThread(degree_t uLength,
-                   degree_t vLength,
+void workPerThread(D uLength,
+                   D vLength,
                    int threadsPerIntersection,
                    int threadId,
                    int* __restrict__ outWorkPerThread,
@@ -82,12 +85,13 @@ void workPerThread(degree_t uLength,
   *outWorkPerThread  = workPerThread + (threadId < remainderWork);
 }
 
+template <typename D>
 __device__ __forceinline__
 void bSearch(unsigned found,
-             degree_t    diagonalId,
+             D    diagonalId,
              const vert_t*  __restrict__ uNodes,
              const vert_t*  __restrict__ vNodes,
-             const degree_t*  __restrict__ uLength,
+             const D*  __restrict__ uLength,
              vert_t* __restrict__ outUMin,
              vert_t* __restrict__ outUMax,
              vert_t* __restrict__ outVMin,
@@ -133,12 +137,13 @@ void bSearch(unsigned found,
     }
 }
 
+template <typename V, typename D>
 __device__ __forceinline__
-int fixStartPoint(degree_t uLength, degree_t vLength,
-                  vert_t* __restrict__ uCurr,
-                  vert_t* __restrict__ vCurr,
-                  const vert_t* __restrict__ uNodes,
-                  const vert_t* __restrict__ vNodes) {
+int fixStartPoint(D uLength, D vLength,
+                  V* __restrict__ uCurr,
+                  V* __restrict__ vCurr,
+                  const V* __restrict__ uNodes,
+                  const V* __restrict__ vNodes) {
 
     unsigned uBigger = (*uCurr > 0) && (*vCurr < vLength) &&
                        (uNodes[*uCurr - 1] == vNodes[*vCurr]);
@@ -150,8 +155,9 @@ int fixStartPoint(degree_t uLength, degree_t vLength,
 }
 
 
+template <typename V>
 __device__ __forceinline__
-void indexBinarySearch(vert_t* data, vert_t arrLen, vert_t key, int& pos) {
+void indexBinarySearch(V* data, V arrLen, V key, int& pos) {
     int low = 0;
     int high = arrLen - 1;
     while (high >= low)
@@ -169,21 +175,21 @@ void indexBinarySearch(vert_t* data, vert_t arrLen, vert_t key, int& pos) {
     }
 }
 
-template<typename HornetDevice>
+template<typename HornetDevice, typename V, typename D>
 __device__ __forceinline__
 void intersectCount(const HornetDevice& hornet,
-        degree_t uLength, degree_t vLength,
-        const vert_t*  __restrict__ uNodes,
-        const vert_t*  __restrict__ vNodes,
-        vert_t*  __restrict__ uCurr,
-        vert_t*  __restrict__ vCurr,
+        D uLength, D vLength,
+        const V*  __restrict__ uNodes,
+        const V*  __restrict__ vNodes,
+        V*  __restrict__ uCurr,
+        V*  __restrict__ vCurr,
         int*    __restrict__ workIndex,
         const int*    __restrict__ workPerThread,
         triangle_t*    __restrict__ triangles,
         int found,
         triangle_t*  __restrict__ outPutTriangles,
-        vert_t src, vert_t dest,
-    vert_t u, vert_t v) {
+        V src, V dest,
+    V u, V v) {
     if (*uCurr < uLength && *vCurr < vLength) {
         int comp;
         int vmask;
@@ -206,24 +212,24 @@ void intersectCount(const HornetDevice& hornet,
     }
 }
 
-template<typename HornetDevice>
+template<typename HornetDevice, typename V, typename D>
 __device__ __forceinline__
 triangle_t count_triangles(const HornetDevice& hornet,
-                           vert_t u,
-                           const vert_t* __restrict__ u_nodes,
-                           degree_t u_len,
-                           vert_t v,
-                           const vert_t* __restrict__ v_nodes,
-                           degree_t v_len,
+                           V u,
+                           const V* __restrict__ u_nodes,
+                           D u_len,
+                           V v,
+                           const V* __restrict__ v_nodes,
+                           D v_len,
                            int   threads_per_block,
                            volatile triangle_t* __restrict__ firstFound,
                            int    tId,
                            triangle_t* __restrict__ outPutTriangles,
-                           const vert_t*      __restrict__ uMask,
-                           const vert_t*      __restrict__ vMask,
+                           const V*      __restrict__ uMask,
+                           const V*      __restrict__ vMask,
                            triangle_t multiplier,
-                           vert_t      src,
-                           vert_t      dest) {
+                           V      src,
+                           V      dest) {
 
     // Partitioning the work to the multiple thread of a single GPU processor.
     //The threads should get a near equal number of the elements to
@@ -234,7 +240,7 @@ triangle_t count_triangles(const HornetDevice& hornet,
     triangle_t triangles = 0;
     int       work_index = 0;
     int            found = 0;
-    vert_t u_min, u_max, v_min, v_max, u_curr, v_curr;
+    V u_min, u_max, v_min, v_max, u_curr, v_curr;
 
     firstFound[tId] = 0;
 
@@ -264,20 +270,20 @@ triangle_t count_triangles(const HornetDevice& hornet,
 }
 
 
-
+template<typename V>
 __device__ __forceinline__
-void workPerBlock(vert_t numVertices,
-                  vert_t* __restrict__ outMpStart,
-                  vert_t* __restrict__ outMpEnd,
+void workPerBlock(V numVertices,
+                  V* __restrict__ outMpStart,
+                  V* __restrict__ outMpEnd,
                   int blockSize) {
-    vert_t       verticesPerMp = numVertices / gridDim.x;
-    vert_t     remainderBlocks = numVertices % gridDim.x;
-    vert_t   extraVertexBlocks = (blockIdx.x > remainderBlocks) ? remainderBlocks
+    V       verticesPerMp = numVertices / gridDim.x;
+    V     remainderBlocks = numVertices % gridDim.x;
+    V   extraVertexBlocks = (blockIdx.x > remainderBlocks) ? remainderBlocks
                                                                : blockIdx.x;
-    vert_t regularVertexBlocks = (blockIdx.x > remainderBlocks) ?
+    V regularVertexBlocks = (blockIdx.x > remainderBlocks) ?
                                     blockIdx.x - remainderBlocks : 0;
 
-    vert_t mpStart = (verticesPerMp + 1) * extraVertexBlocks +
+    V mpStart = (verticesPerMp + 1) * extraVertexBlocks +
                      verticesPerMp * regularVertexBlocks;
     *outMpStart   = mpStart;
     *outMpEnd     = mpStart + verticesPerMp + (blockIdx.x < remainderBlocks);
@@ -332,7 +338,7 @@ void devicecuHornetKTruss(HornetDevice hornet,
             const vert_t* small_ptr = hornet.vertex(small).neighbor_ptr();
             const vert_t* large_ptr = hornet.vertex(large).neighbor_ptr();
 
-            triangle_t triFound = count_triangles
+            triangle_t triFound = count_triangles<HornetDevice, vert_t, degree_t>
                 (hornet, small, small_ptr, small_len, large, large_ptr,
                  large_len, threads_per_block, (triangle_t*)firstFoundPos,
                  tx % threads_per_block, outPutTriangles,
@@ -349,7 +355,8 @@ void devicecuHornetKTruss(HornetDevice hornet,
 
 //==============================================================================
 
-void kTrussOneIteration(HornetGraph& hornet,
+template <typename HornetGraphType>
+void kTrussOneIterationWeighted(HornetGraphType& hornet,
                         triangle_t* __restrict__ output_triangles,
                         int threads_per_block,
                         int number_blocks,
@@ -363,4 +370,20 @@ void kTrussOneIteration(HornetGraph& hornet,
 
 }
 
+void kTrussOneIteration(HornetGraph& hornet,
+                        triangle_t*  __restrict__ output_triangles,
+                        int threads_per_block,
+                        int number_blocks,
+                        int shifter,
+                        int thread_blocks,
+                        int blockdim,
+                        HostDeviceVar<KTrussData>& hd_data) {
+    devicecuHornetKTruss <<< thread_blocks, blockdim >>>
+        (hornet.device(), output_triangles, threads_per_block,
+         number_blocks, shifter, hd_data);
+}
+
+
 } // namespace hornets_nest
+
+#endif

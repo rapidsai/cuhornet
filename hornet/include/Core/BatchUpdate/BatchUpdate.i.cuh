@@ -162,8 +162,8 @@ void
 BATCH_UPDATE::
 reset(BatchUpdatePtr<vid_t, TypeList<EdgeMetaTypes...>, device_t, degree_t> ptr) noexcept {
     _nE = ptr.nE();
-    _edge[0].resize(_nE + 1);
-    _edge[1].resize(_nE + 1);
+    _edge[0].resize(_nE);
+    _edge[1].resize(_nE);
     unique_sources.resize(_nE + 1);
     unique_degrees.resize(_nE + 1);
     duplicate_flag.resize(_nE + 1);

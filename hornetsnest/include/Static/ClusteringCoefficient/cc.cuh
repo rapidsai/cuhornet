@@ -3,7 +3,7 @@
 #include "HornetAlg.hpp"
 
 #include "Static/TriangleCounting/triangle2.cuh"
-
+#include <BufferPool.cuh>
 
 namespace hornets_nest {
 
@@ -13,6 +13,7 @@ using clusterCoeff_t =  float;
 //==============================================================================
 
 class ClusteringCoefficient : public TriangleCounting2 {
+  BufferPool pool;
 public:
     ClusteringCoefficient(HornetGraph& hornet);
     ~ClusteringCoefficient();
