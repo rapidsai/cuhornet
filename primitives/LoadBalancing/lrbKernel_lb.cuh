@@ -55,7 +55,7 @@ namespace kernel {
 
 
 
-
+// Estimate the amount of work per vertex given an array of vertices
 template<typename HornetDevice, typename vid_t>
 __global__
 void computeWorkKernelLRB(HornetDevice              hornet,
@@ -89,6 +89,7 @@ void computeWorkKernelLRB(HornetDevice              hornet,
 }
 
 
+// Estimate the amount of work per vertex for all vertices in the graph
 template<typename HornetDevice>
 __global__
 void computeWorkKernelLRB(HornetDevice              hornet,
@@ -120,6 +121,9 @@ void computeWorkKernelLRB(HornetDevice              hornet,
     }
 }
 
+
+// Very simple prefix operation. Using a single CUDA thread.
+// Motivation is to keep the operation on the GPU.
 template <typename vid_t>
 __global__ void  binPrefixKernelLRB(vid_t *bins, vid_t *d_binsPrefix){
     vid_t i = threadIdx.x + blockIdx.x *blockDim.x;
@@ -131,7 +135,8 @@ __global__ void  binPrefixKernelLRB(vid_t *bins, vid_t *d_binsPrefix){
     }
 }
 
-
+// Reorganize the vertices s.t. they are placed in the bins according to their
+// estimated work
 template<bool useAllHornet,typename HornetDevice>
 __global__ void  rebinKernelLRB(
   HornetDevice hornet ,
@@ -183,8 +188,12 @@ __global__ void  rebinKernelLRB(
 
 }
 
-
-
+// Each thread is responsible for a single vertex at a given time.
+// This original purpose of this kernel was to process vertices with fewer than 32
+// edges.
+// In practice, we found that it is preferable to use the "fatWorkerLRB" kernel for
+// the smaller vertices as well. As such, this kernel is currently not in use.
+// Leaving it here as it might be useful for future applications.
 template<typename HornetDevice,typename Operator, typename vid_t>
 __global__ void skinnyWorkerLRB(
   HornetDevice hornet , 
@@ -208,6 +217,7 @@ __global__ void skinnyWorkerLRB(
     }
 }
 
+// Each thread-block is responsible for a single vertex at a given time.
 template<typename HornetDevice,typename Operator, typename vid_t>
 __global__ void fatWorkerLRB(
   HornetDevice hornet , 
@@ -231,7 +241,8 @@ __global__ void fatWorkerLRB(
     }
 }
 
-
+// This kernel is responsible with procesing very large vertices.
+// Each vertex is processed by the entire GPU.
 template<typename HornetDevice,typename Operator, typename vid_t>
 __global__ void extraFatWorkerLRB(
   HornetDevice hornet , 

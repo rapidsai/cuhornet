@@ -58,9 +58,9 @@ LogarthimRadixBinning32::LogarthimRadixBinning32(HornetClass& hornet) noexcept {
 
     d_lrbRelabled = nullptr;
     if(hornet.nV()>0)
-        gpu::allocate(d_lrbRelabled, hornet.nV());
-    gpu::allocate(d_bins, 33);
-    gpu::allocate(d_binsPrefix, 33);
+        pool.allocate(&d_lrbRelabled, hornet.nV());
+    pool.allocate(&d_bins, 33);
+    pool.allocate(&d_binsPrefix, 33);
 
     cudaEventCreate(&syncher);
 
@@ -70,17 +70,6 @@ LogarthimRadixBinning32::LogarthimRadixBinning32(HornetClass& hornet) noexcept {
 }
 
 inline LogarthimRadixBinning32::~LogarthimRadixBinning32() noexcept {
-    //hornets_nest::gpu::free(_d_work);
-    if(d_lrbRelabled != nullptr){
-        gpu::free(d_lrbRelabled);d_lrbRelabled = nullptr;
-    }
-    if(d_bins != nullptr){
-        gpu::free(d_bins);d_bins = nullptr;
-    }
-    if(d_binsPrefix != nullptr){
-        gpu::free(d_binsPrefix);d_binsPrefix = nullptr;
-    }
-
     for(int i=0;i<LRB_STREAMS; i++)
       cudaStreamDestroy ( streams[i]);
 
@@ -97,48 +86,56 @@ void LogarthimRadixBinning32::apply(HornetClass& hornet,
 
     cudaMemset(d_bins,0,33*sizeof(vid_t));
 
+    // Estimate the amount of work based on the vertices
     if (d_input != nullptr) {
-    kernel::computeWorkKernelLRB
-        <<< xlib::ceil_div<BLOCK_SIZE>(num_vertices), BLOCK_SIZE >>>
-        (hornet.device(), d_input, num_vertices, d_bins);
+        // User supplied a set of vertices
+        kernel::computeWorkKernelLRB
+            <<< xlib::ceil_div<BLOCK_SIZE>(num_vertices), BLOCK_SIZE >>>
+            (hornet.device(), d_input, num_vertices, d_bins);
     } else {
-    kernel::computeWorkKernelLRB
-        <<< xlib::ceil_div<BLOCK_SIZE>(num_vertices), BLOCK_SIZE >>>
-        (hornet.device(), num_vertices, d_bins);
+        // Users wants the work estimation accross all the vertices in the graph
+        kernel::computeWorkKernelLRB
+            <<< xlib::ceil_div<BLOCK_SIZE>(num_vertices), BLOCK_SIZE >>>
+            (hornet.device(), num_vertices, d_bins);
     }
 
+    // Compute a prefix sum operation on the 32 bins
     kernel::binPrefixKernelLRB <<<1,32>>> (d_bins,d_binsPrefix);  
     uint32_t h_binsPrefix[33];
+    // Copy bins to the Host. This will be used when launching the kernels in the final phase.
     cudaMemcpy(h_binsPrefix, d_binsPrefix,sizeof(uint32_t)*33, cudaMemcpyDeviceToHost);
 
+    // Reorganize the vertices into the bins. Vertices in the same bin have an amount work that is
+    // never greater or small than two times that of other vertices in the same bin.
     if (d_input != nullptr) {
+        // User supplied a set of vertices
         int rebinblocks = (num_vertices)/BLOCK_SIZE + (((num_vertices)%BLOCK_SIZE)?1:0);
         kernel::rebinKernelLRB<false><<<rebinblocks,BLOCK_SIZE>>>(hornet.device(),d_input,
             d_binsPrefix, d_lrbRelabled,num_vertices);
 
     } else {
+        // Users wants the work estimation accross all the vertices in the graph
         int rebinblocks = (num_vertices)/BLOCK_SIZE + (((num_vertices)%BLOCK_SIZE)?1:0);
         kernel::rebinKernelLRB<true><<<rebinblocks,BLOCK_SIZE>>>(hornet.device(),d_input,
             d_binsPrefix, d_lrbRelabled,num_vertices);
     }
 
-
+    // Extra large vertices (those that have more than 2^16 edges) will be processed across
+    // the entire GPU.
     int activeVertices = h_binsPrefix[16];
     int blockSize = 32;
     if(activeVertices>0){
         kernel::extraFatWorkerLRB<<<1024,blockSize,0,streams[0]>>>(hornet.device(), d_lrbRelabled, op, activeVertices);
     }
 
-
+    // Vertices with edges 2^12-2^16 will be executed within a single thread blocks with 1024 threads.
     activeVertices = h_binsPrefix[20] - h_binsPrefix[16];
-
     blockSize = 1024;
     if(activeVertices>0){
         kernel::fatWorkerLRB<<<activeVertices,blockSize,0,streams[1]>>>(hornet.device(), d_lrbRelabled, op, activeVertices,h_binsPrefix[16]);
     }
 
     const int remainingFat=12;
-    //const int bi = 20+remainingFat-1;
 
     blockSize = 512;
 
@@ -155,15 +152,7 @@ void LogarthimRadixBinning32::apply(HornetClass& hornet,
             blockSize=32;
     }
 
-    // const int smallBlockSize = 32;
-    // int smallVertices = num_vertices-h_binsPrefix[bi];
-    // int smallVerticesBlocks = (smallVertices)/smallBlockSize + ((smallVertices%smallBlockSize)?1:0);
-    // if(smallVerticesBlocks>0){                   
-    //     kernel::skinnyWorkerLRB<<<smallVerticesBlocks,smallBlockSize,0,streams[LRB_STREAMS-1]>>>( hornet.device(), d_lrbRelabled, op, smallVertices,h_binsPrefix[bi]); 
-    // }
     cudaEventSynchronize(syncher);
-
-
 }
 
 template<typename HornetClass, typename Operator>

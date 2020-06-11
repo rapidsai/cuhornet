@@ -47,6 +47,7 @@ This implementation of LRB follows the details in [1]. More details of LRB can b
 
 #include <cuda_runtime.h>
 #include "BasicTypes.hpp"
+#include <BufferPool.cuh>
 
 namespace hornets_nest {
 /**
@@ -103,6 +104,7 @@ private:
     const int LRB_STREAMS = 16;
     cudaStream_t* streams;
 
+    BufferPool pool;
 };
 
 } // namespace load_balancing
