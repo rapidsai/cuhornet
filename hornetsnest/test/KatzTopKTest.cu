@@ -94,19 +94,19 @@ int exec(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-    int ret = 0;
-    hornets_nest::gpu::initializeRMMPoolAllocation();//update initPoolSize if you know your memory requirement and memory availability in your system, if initial pool size is set to 0 (default value), RMM currently assigns half the device memory.
-    {//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
+  int ret = 0;
+  auto resource = std::make_unique<rmm::mr::cnmem_memory_resource>();
+  rmm::mr::set_default_resource(resource.get());
+  {
 
-      for(int i=0; i<10; i++){
-          ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityTopKDynamicH>(argc, argv);
-          ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityTopKStatic>(argc, argv);
-        
-      }
+    for(int i=0; i<10; i++){
+      ret = exec<hornets_nest::HornetDynamicGraph,hornets_nest::KatzCentralityTopKDynamicH>(argc, argv);
+      ret = exec<hornets_nest::HornetStaticGraph,hornets_nest::KatzCentralityTopKStatic>(argc, argv);
 
-    }//scoping technique to make sure that hornets_nest::gpu::finalizeRMMPoolAllocation is called after freeing all RMM allocations.
-    hornets_nest::gpu::finalizeRMMPoolAllocation();
+    }
 
-    return ret;
+  }
+
+  return ret;
 }
 

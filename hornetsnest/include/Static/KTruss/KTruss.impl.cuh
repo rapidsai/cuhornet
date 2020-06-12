@@ -34,7 +34,6 @@
 #include <iostream>
 #include <Device/Util/Timer.cuh>
 
-#include <rmm/rmm.h>
 #include <rmm/thrust_rmm_allocator.h>
 
 using namespace std;

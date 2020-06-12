@@ -44,7 +44,6 @@
 #include <thrust/gather.h>
 #include <vector>
 
-#include <rmm/rmm.h>
 #include <rmm/thrust_rmm_allocator.h>
 
 using namespace rmm;
