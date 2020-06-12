@@ -80,7 +80,6 @@ private:
     load_balancing::LogarthimRadixBinning32 lrb_lb;
     int lb_mechansim;
 
-    //load_balancing::VertexBased1 load_balancing;
     dist_t* d_distances   { nullptr };
     vid_t   bfs_source    { 0 };
     dist_t  current_level { 0 };
@@ -125,7 +124,8 @@ template <typename HornetGraph>
 BFSTOPDOWN2::BfsTopDown2(HornetGraph& hornet) :
                                  StaticAlgorithm<HornetGraph>(hornet),
                                  queue(hornet, 5),
-                                 load_balancing(hornet) {
+                                 load_balancing(hornet),
+                                 lrb_lb(hornet) {
     pool.allocate(&d_distances, hornet.nV());
     reset();
 }
