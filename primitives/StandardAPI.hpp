@@ -42,12 +42,6 @@
 namespace hornets_nest {
 namespace gpu {
 
-__forceinline__
-void initializeRMMPoolAllocation(const size_t initPoolSize=0);//if initial pool size is set to 0, RMM currently assigns half the device memory
-
-__forceinline__
-void finalizeRMMPoolAllocation(void);
-
 template<typename T>
 void allocate(T*& pointer, size_t num_items);
 

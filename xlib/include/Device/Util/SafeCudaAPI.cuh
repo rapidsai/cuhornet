@@ -61,7 +61,6 @@
 #include <cassert>           //assert
 #include <cuda_runtime.h>    //cudaError_t
 #include <utility>           //std::forward
-#include <rmm/rmm.h>
 
 #if defined(NEVER_DEFINED)
     #include "SafeFunctions_.cuh"

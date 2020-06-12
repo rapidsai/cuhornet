@@ -50,7 +50,6 @@
 #include "BatchUpdateKernels.cuh"
 #include "../Static/Static.cuh"
 
-#include <rmm/rmm.h>
 #include <rmm/thrust_rmm_allocator.h>
 
 using namespace rmm;

@@ -1,7 +1,6 @@
 #ifndef LRB_CUH
 #define LRB_CUH
 
-#include <rmm/rmm.h>
 #include <rmm/thrust_rmm_allocator.h>
 #include <vector>
 

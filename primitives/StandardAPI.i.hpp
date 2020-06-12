@@ -41,44 +41,12 @@
 #include <Device/Util/SafeCudaAPI.cuh>
 #include <Device/Util/SafeCudaAPIAsync.cuh>
 #include <Device/Primitives/CubWrapper.cuh>
-#include <rmm/rmm.h>
 #include <omp.h>
 #include <cstring>
+#include <rmm/mr/device/cnmem_memory_resource.hpp>
 
 namespace hornets_nest {
 namespace gpu {
-
-//it may be better to move this inside a cpp file (similar to xlib::detail::cudaErrorHandler) if there is an appropriate place.
-#define RMM_ERROR_HANDLER(caller_name, callee_name, result) do {                                                   \
-    std::cerr << xlib::Color::FG_RED << "\nRMM error\n" << xlib::Color::FG_DEFAULT          \
-        << xlib::Emph::SET_UNDERLINE << __FILE__                                            \
-        << xlib::Emph::SET_RESET  << "(" << __LINE__ << ")"                                 \
-        << " [ "                                                                            \
-        << xlib::Color::FG_L_CYAN << (caller_name) << xlib::Color::FG_DEFAULT \
-        << " ] : " << callee_name                                                              \
-        << " -> " << rmmGetErrorString(result)                                              \
-        << "(" << static_cast<int>(result) << ")\n";                                        \
-    assert(false);                                                                          \
-    std::atexit(reinterpret_cast<void(*)()>(cudaDeviceReset));                              \
-    std::exit(EXIT_FAILURE);                                                                \
-} while (0)
-
-void initializeRMMPoolAllocation(const size_t initPoolSize) {
-    rmmOptions_t options;
-    options.allocation_mode = PoolAllocation;
-    options.initial_pool_size = initPoolSize;
-    auto result = rmmInitialize(&options);
-    if (result != RMM_SUCCESS) {
-        RMM_ERROR_HANDLER("hornets_nest::gpu::initializeRMMPoolAllocation", "rmmInitialize", result);
-    }
-}
-
-void finalizeRMMPoolAllocation(void) {
-    auto result = rmmFinalize();
-    if (result != RMM_SUCCESS) {
-        RMM_ERROR_HANDLER("hornets_nest::gpu::finalizeRMMPoolAllocation", "rmmFinalize", result);
-    }
-}
 
 template<typename T>
 void allocate(T*& pointer, size_t num_items) {
