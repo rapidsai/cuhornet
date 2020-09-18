@@ -54,7 +54,7 @@ int exec(int argc, char* argv[]) {
 
 	  cudaSetDevice(0);
     GraphStd<vert_t, vert_t> graph(UNDIRECTED);
-    
+
     graph.read(argv[1], SORT | PRINT_INFO);
 
     HornetInit hornet_init(graph.nV(), graph.nE(), graph.csr_out_offsets(), graph.csr_out_edges());
@@ -64,7 +64,7 @@ int exec(int argc, char* argv[]) {
 	  int topK = graph.nV();
      if(argc>2)
         topK=atoi(argv[2]);
- 
+
     // Finding largest vertex degreemake
     degree_t max_degree_vertex = hornet_graph.max_degree();
     std::cout << "Max degree vextex is " << max_degree_vertex << std::endl;
@@ -83,7 +83,7 @@ int exec(int argc, char* argv[]) {
     auto total_time = TM.duration();
     std::cout << "The number of iterations     : "
               << kcPostUpdate.get_iteration_count()
-              << "\nTopK                       : " << topK 
+              << "\nTopK                       : " << topK
               << "\nTotal time for KC          : " << total_time
               << "\nAverage time per iteartion : "
               << total_time /
@@ -96,7 +96,7 @@ int exec(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
   int ret = 0;
   auto resource = std::make_unique<rmm::mr::cnmem_memory_resource>();
-  rmm::mr::set_default_resource(resource.get());
+  rmm::mr::set_current_device_resource(resource.get());
   {
 
     for(int i=0; i<10; i++){
@@ -109,4 +109,3 @@ int main(int argc, char* argv[]) {
 
   return ret;
 }
-

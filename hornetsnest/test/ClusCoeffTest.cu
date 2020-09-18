@@ -37,14 +37,14 @@ int exec(int argc, char* argv[]) {
 
     TM.stop();
     TM.print("Computation time:");
-  
+
     return 0;
 }
 
 int main(int argc, char* argv[]) {
   int ret = 0;
   auto resource = std::make_unique<rmm::mr::cnmem_memory_resource>();
-  rmm::mr::set_default_resource(resource.get());
+  rmm::mr::set_current_device_resource(resource.get());
   {
 
     ret = exec(argc, argv);
@@ -53,4 +53,3 @@ int main(int argc, char* argv[]) {
 
   return ret;
 }
-

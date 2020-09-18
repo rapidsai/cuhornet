@@ -38,15 +38,15 @@ int exec(int argc, char* argv[]) {
 
     BfsBottomUp2 bfs_bottom_up(hornet_graph, hornet_graph_inv);
     BfsBottomUp2 bfs_top_down(hornet_graph, hornet_graph_inv);
- 
+
 	vid_t root = graph.max_out_degree_id();
 	if (argc==3)
 	  root = atoi(argv[2]);
 
     bfs_bottom_up.set_parameters(root);
     bfs_top_down.set_parameters(root);
-    
- 
+
+
     Timer<DEVICE> TM;
     cudaProfilerStart();
     TM.start();
@@ -66,7 +66,7 @@ int exec(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
   int ret = 0;
   auto resource = std::make_unique<rmm::mr::cnmem_memory_resource>();
-  rmm::mr::set_default_resource(resource.get());
+  rmm::mr::set_current_device_resource(resource.get());
   {
 
     ret = exec(argc, argv);
@@ -75,4 +75,3 @@ int main(int argc, char* argv[]) {
 
   return ret;
 }
-
