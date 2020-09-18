@@ -25,7 +25,7 @@ int exec(int argc, char* argv[]) {
     HornetGraph hornet_graph(hornet_init);
 
     vid_t root = 0;
-    if(argc==3) 
+    if(argc==3)
         root = atoi(argv[2]);
 
     SSSP sssp(hornet_graph);
@@ -43,8 +43,6 @@ int exec(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
   int ret = 0;
-  auto resource = std::make_unique<rmm::mr::cnmem_memory_resource>();
-  rmm::mr::set_default_resource(resource.get());
   {
 
     ret = exec(argc, argv);
@@ -53,4 +51,3 @@ int main(int argc, char* argv[]) {
 
   return ret;
 }
-

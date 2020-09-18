@@ -1,12 +1,12 @@
 /**
  * @brief Triangle counting test program
  * Based on triangle counting algorithm designed in:
- * J. Fox, O. Green, K. Gabert, X. An, D. Bader, “Fast and Adaptive List Intersections on the GPU”, 
- * IEEE High Performance Extreme Computing Conference (HPEC), 
+ * J. Fox, O. Green, K. Gabert, X. An, D. Bader, “Fast and Adaptive List Intersections on the GPU”,
+ * IEEE High Performance Extreme Computing Conference (HPEC),
  * Waltham, Massachusetts, 2018
- * O. Green, J. Fox, A. Tripathy, A. Watkins, K. Gabert, E. Kim, X. An, K. Aatish, D. Bader, 
- * “Logarithmic Radix Binning and Vectorized Triangle Counting”, 
- * IEEE High Performance Extreme Computing Conference (HPEC), 
+ * O. Green, J. Fox, A. Tripathy, A. Watkins, K. Gabert, E. Kim, X. An, K. Aatish, D. Bader,
+ * “Logarithmic Radix Binning and Vectorized Triangle Counting”,
+ * IEEE High Performance Extreme Computing Conference (HPEC),
  * Waltham, Massachusetts, 2018
  * @file
  */
@@ -26,7 +26,7 @@ using namespace hornets_nest;
 using HornetGraph = ::hornet::gpu::Hornet<vid_t>;
 
 
-// CPU Version - assume sorted index lists. 
+// CPU Version - assume sorted index lists.
 int hostSingleIntersection (const vid_t ai, const degree_t alen, const vid_t * a,
                             const vid_t bi, const degree_t blen, const vid_t * b){
 
@@ -50,8 +50,8 @@ int hostSingleIntersection (const vid_t ai, const degree_t alen, const vid_t * a
         else {
             bptr++;
         }
-      }  
-  
+      }
+
     return out;
 }
 
@@ -66,12 +66,12 @@ void hostCountTriangles (const vid_t nv, const vid_t ne, const eoff_t * off,
         for(int iter=off[src]; iter<off[src+1]; iter++)
         {
             vid_t dest=ind[iter];
-            degree_t destLen=off[dest+1]-off[dest];            
+            degree_t destLen=off[dest+1]-off[dest];
             int64_t tris= hostSingleIntersection (src, srcLen, ind+off[src],
                                                     dest, destLen, ind+off[dest]);
             sum+=tris;
         }
-    }    
+    }
     *allTriangles=sum;
     //printf("Sequential number of triangles %ld\n",sum);
 }
@@ -79,15 +79,15 @@ void hostCountTriangles (const vid_t nv, const vid_t ne, const eoff_t * off,
 
 int exec(int argc, char* argv[]) {
     int deviceCount = 0;
-    cudaGetDeviceCount(&deviceCount);      
-    std::cout << "Number of devices: " << deviceCount << std::endl; 
+    cudaGetDeviceCount(&deviceCount);
+    std::cout << "Number of devices: " << deviceCount << std::endl;
     //int device = 4;
     //cudaSetDevice(device);
     //struct cudaDeviceProp properties;
     //cudaGetDeviceProperties(&properties, device);
     //std::cout<<"using "<<properties.multiProcessorCount<<" multiprocessors"<<std::endl;
     //std::cout<<"max threads per processor: "<<properties.maxThreadsPerMultiProcessor<<std::endl;
-   
+
     using namespace graph::structure_prop;
     using namespace graph::parsing_prop;
 
@@ -99,7 +99,7 @@ int exec(int argc, char* argv[]) {
     HornetGraph hornet_graph(hornet_init);
     TriangleCounting2 tc(hornet_graph);
     tc.init();
-    
+
     int work_factor;
     if (argc > 2) {
         work_factor = atoi(argv[2]);
@@ -119,7 +119,7 @@ int exec(int argc, char* argv[]) {
 
     triangle_t deviceTriangleCount = tc.countTriangles();
     printf("Device triangles: %llu\n", deviceTriangleCount);
-  
+
     /*
     int64_t hostTriCount = 0;
     std::cout << "Starting host triangle counting" << std::endl;
@@ -131,8 +131,6 @@ int exec(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
   int ret = 0;
-  auto resource = std::make_unique<rmm::mr::cnmem_memory_resource>();
-  rmm::mr::set_default_resource(resource.get());
   {
 
     ret = exec(argc, argv);
@@ -141,4 +139,3 @@ int main(int argc, char* argv[]) {
 
   return ret;
 }
-
