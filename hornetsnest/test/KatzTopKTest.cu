@@ -95,8 +95,6 @@ int exec(int argc, char* argv[]) {
 
 int main(int argc, char* argv[]) {
   int ret = 0;
-  auto resource = std::make_unique<rmm::mr::cnmem_memory_resource>();
-  rmm::mr::set_current_device_resource(resource.get());
   {
 
     for(int i=0; i<10; i++){

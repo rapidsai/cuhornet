@@ -43,7 +43,7 @@
 #include <Device/Primitives/CubWrapper.cuh>
 #include <omp.h>
 #include <cstring>
-#include <rmm/mr/device/cnmem_memory_resource.hpp>
+#include <rmm/mr/device/per_device_resource.hpp>
 
 namespace hornets_nest {
 namespace gpu {
