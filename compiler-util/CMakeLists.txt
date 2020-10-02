@@ -28,9 +28,45 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # if on, save output of compile commands t
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
 #set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler -D_GLIBCXX_USE_CXX11_ABI=0") # for compatibility with Arrow
 
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_60,code=sm_60")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_70,code=sm_70")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode=arch=compute_75,code=sm_75")
+find_package(CUDA)
+
+# Check for aarch64 vs workstation architectures
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+  message(STATUS "CMAKE Detected aarch64 CPU architecture, selecting appropriate gencodes")
+  # This is being build for Linux4Tegra or SBSA ARM64 CUDA
+  set(GPU_ARCHS "62") # Default minimum CUDA GenCode for cuML embedded
+  if(CUDA_VERSION_MAJOR GREATER_EQUAL 9)
+    set(GPU_ARCHS "${GPU_ARCHS};72")
+  endif()
+  if(CUDA_VERSION_MAJOR GREATER_EQUAL 11)
+    # This is probably for SBSA CUDA, or a next gen Jetson
+    set(GPU_ARCHS "${GPU_ARCHS};75;80")
+  endif()
+
+else()
+  message(STATUS "CMAKE selecting appropriate gencodes for x86 or ppc64 CPU architectures")
+  # System architecture was not aarch64,
+  # this is datacenter or workstation class hardware
+  set(GPU_ARCHS "60") # Default minimum supported CUDA gencode for cuML
+  if(CUDA_VERSION_MAJOR GREATER_EQUAL 9)
+    set(GPU_ARCHS "${GPU_ARCHS};70")
+  endif()
+  if(CUDA_VERSION_MAJOR GREATER_EQUAL 10)
+    set(GPU_ARCHS "${GPU_ARCHS};75")
+  endif()
+  if(CUDA_VERSION_MAJOR GREATER_EQUAL 11)
+    set(GPU_ARCHS "${GPU_ARCHS};80")
+  endif()
+
+endif()
+
+message("-- Building for GPU_ARCHS = ${GPU_ARCHS}")
+foreach(arch ${GPU_ARCHS})
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_${arch},code=sm_${arch}")
+endforeach()
+
+list(GET GPU_ARCHS -1 ptx)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_${ptx},code=compute_${ptx}")
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-constexpr")
 
@@ -82,18 +118,19 @@ find_path(RMM_INCLUDE "rmm"
     "$ENV{CONDA_PREFIX}/include/rmm"
     "$ENV{CONDA_PREFIX}/include")
 
-find_library(RMM_LIBRARY "rmm"
-    HINTS
-    "$ENV{RMM_ROOT}/lib"
-    "$ENV{CONDA_PREFIX}/lib")
+#find_library(RMM_LIBRARY "rmm"
+#    HINTS
+#    "$ENV{RMM_ROOT}/lib"
+#    "$ENV{CONDA_PREFIX}/lib")
 
-message(STATUS "RMM: RMM_LIBRARY set to ${RMM_LIBRARY}")
-message(STATUS "RMM: RMM_INCLUDE set to ${RMM_INCLUDE}")
+# RMM is now header only
+#message(STATUS "RMM: RMM_LIBRARY set to ${RMM_LIBRARY}")
+#message(STATUS "RMM: RMM_INCLUDE set to ${RMM_INCLUDE}")
 
-add_library(rmm SHARED IMPORTED ${RMM_LIBRARY})
-if (RMM_INCLUDE AND RMM_LIBRARY)
-    set_target_properties(rmm PROPERTIES IMPORTED_LOCATION ${RMM_LIBRARY})
-endif (RMM_INCLUDE AND RMM_LIBRARY)
+#add_library(rmm SHARED IMPORTED ${RMM_LIBRARY})
+#if (RMM_INCLUDE AND RMM_LIBRARY)
+#    set_target_properties(rmm PROPERTIES IMPORTED_LOCATION ${RMM_LIBRARY})
+#endif (RMM_INCLUDE AND RMM_LIBRARY)
 
 ###################################################################################################
 # - library paths ---------------------------------------------------------------------------------
