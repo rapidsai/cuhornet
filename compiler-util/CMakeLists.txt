@@ -112,25 +112,14 @@ endif()
 ###################################################################################################
 # - RMM -------------------------------------------------------------------------------------------
 
+# As of RAPIDS 0.16 RMM is header only
 find_path(RMM_INCLUDE "rmm"
     HINTS
     "$ENV{RMM_ROOT}/include"
     "$ENV{CONDA_PREFIX}/include/rmm"
     "$ENV{CONDA_PREFIX}/include")
 
-#find_library(RMM_LIBRARY "rmm"
-#    HINTS
-#    "$ENV{RMM_ROOT}/lib"
-#    "$ENV{CONDA_PREFIX}/lib")
-
-# RMM is now header only
-#message(STATUS "RMM: RMM_LIBRARY set to ${RMM_LIBRARY}")
-#message(STATUS "RMM: RMM_INCLUDE set to ${RMM_INCLUDE}")
-
-#add_library(rmm SHARED IMPORTED ${RMM_LIBRARY})
-#if (RMM_INCLUDE AND RMM_LIBRARY)
-#    set_target_properties(rmm PROPERTIES IMPORTED_LOCATION ${RMM_LIBRARY})
-#endif (RMM_INCLUDE AND RMM_LIBRARY)
+message(STATUS "RMM: RMM_INCLUDE set to ${RMM_INCLUDE}")
 
 ###################################################################################################
 # - library paths ---------------------------------------------------------------------------------
