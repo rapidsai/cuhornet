@@ -51,13 +51,15 @@ namespace gpu {
 template<typename T>
 void allocate(T*& pointer, size_t num_items) {
     pointer = static_cast<T*>(
-        rmm::mr::get_current_device_resource()->allocate(sizeof(T)*num_items, 0));
+        rmm::mr::get_current_device_resource()->allocate(sizeof(T)*num_items,
+          rmm::cuda_stream_default));
 }
 
 template<typename T>
 typename std::enable_if<std::is_pointer<T>::value>::type
 free(T& pointer, size_t num_items) {
-    rmm::mr::get_current_device_resource()->deallocate(static_cast<void*>(pointer), sizeof(T)*num_items, 0);
+    rmm::mr::get_current_device_resource()->deallocate(static_cast<void*>(pointer), sizeof(T)*num_items,
+        rmm::cuda_stream_default);
 }
 
 template<typename T>
