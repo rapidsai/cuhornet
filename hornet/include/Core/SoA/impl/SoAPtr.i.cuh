@@ -35,6 +35,7 @@
  */
 
 #include <rmm/thrust_rmm_allocator.h>
+#include <thrust/host_vector.h>
 
 using namespace rmm;
 
