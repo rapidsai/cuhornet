@@ -64,7 +64,7 @@ protected:
     explicit CubWrapper(const int num_items) noexcept : _num_items(num_items) {}
     ~CubWrapper() noexcept { release(); }
 
-    mutable rmm::device_buffer _d_temp_storage { 0 };
+    mutable rmm::device_buffer _d_temp_storage { 0, cuda_stream_view{} };
     size_t _temp_storage_bytes { 0 };
     int    _num_items          { 0 };
 };
