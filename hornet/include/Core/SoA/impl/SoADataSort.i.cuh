@@ -310,7 +310,7 @@ cub_segmented_sort(CSoAPtr<EdgeTypes...> &soa, degree_t capacity, degree_t segme
   cub::DeviceSegmentedRadixSort::SortKeys(
       NULL, tempStorageBytes, in_edges, out_edges, capacity,
       offsets.size() - 1, offsets.data().get(), offsets.data().get() + 1);
-  rmm::device_buffer tempStorage(tempStorageBytes);
+  rmm::device_buffer tempStorage(tempStorageBytes, cuda_stream_view{});
   cub::DeviceSegmentedRadixSort::SortKeys(
       tempStorage.data(), tempStorageBytes, in_edges, out_edges, capacity,
       offsets.size() - 1, offsets.data().get(), offsets.data().get() + 1);
@@ -344,7 +344,7 @@ cub_segmented_sort(CSoAPtr<EdgeTypes...> &soa, degree_t capacity, degree_t segme
   cub::DeviceSegmentedRadixSort::SortPairs(
       NULL, tempStorageBytes, in_key, out_key, in_val, out_val, capacity,
       offsets.size() - 1, offsets.data().get(), offsets.data().get() + 1);
-  rmm::device_buffer tempStorage(tempStorageBytes);
+  rmm::device_buffer tempStorage(tempStorageBytes, cuda_stream_view{});
   cub::DeviceSegmentedRadixSort::SortPairs(
       tempStorage.data(), tempStorageBytes, in_key, out_key, in_val, out_val, capacity,
       offsets.size() - 1, offsets.data().get(), offsets.data().get() + 1);
@@ -382,7 +382,7 @@ cub_segmented_sort(CSoAPtr<EdgeTypes...> &soa, degree_t capacity, degree_t segme
   cub::DeviceSegmentedRadixSort::SortPairs(
       NULL, tempStorageBytes, in_key, out_key, in_val, out_val, capacity,
       offsets.size() - 1, offsets.data().get(), offsets.data().get() + 1);
-  rmm::device_buffer tempStorage(tempStorageBytes);
+  rmm::device_buffer tempStorage(tempStorageBytes, cuda_stream_view{});
   cub::DeviceSegmentedRadixSort::SortPairs(
       tempStorage.data(), tempStorageBytes, in_key, out_key, in_val, out_val, capacity,
       offsets.size() - 1, offsets.data().get(), offsets.data().get() + 1);
