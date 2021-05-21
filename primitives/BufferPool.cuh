@@ -29,6 +29,6 @@ class BufferPool {
 template <typename P>
 void
 BufferPool::allocate(P** ptr, size_t num_items) {
-  _data.emplace_back(num_items*sizeof(P));
+  _data.emplace_back(num_items*sizeof(P), cuda_stream_view{});
   *ptr = static_cast<P*>(_data.back().data());
 }

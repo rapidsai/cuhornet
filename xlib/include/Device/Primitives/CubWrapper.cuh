@@ -206,7 +206,7 @@ void CubSortByKey<T, R>::initialize(const int max_items) noexcept {
                                     d_key, d_key_sorted,
                                     d_data_in, d_data_out,
                                     _num_items, 0, sizeof(T) * 8);
-    _d_temp_storage.resize(temp_storage_bytes);
+    _d_temp_storage.resize(temp_storage_bytes, cuda_stream_view{});
 }
 
 //------------------------------------------------------------------------------
@@ -307,7 +307,7 @@ void CubRunLengthEncode<T>::initialize(const int max_items) noexcept {
     cub::DeviceRunLengthEncode::Encode(nullptr, temp_storage_bytes,
                                        d_in, d_unique_out, d_counts_out,
                                        _d_num_runs_out.data().get(), _num_items);
-    _d_temp_storage.resize(temp_storage_bytes);
+    _d_temp_storage.resize(temp_storage_bytes, cuda_stream_view{});
 }
 
 //------------------------------------------------------------------------------
@@ -375,7 +375,7 @@ void CubExclusiveSum<T>::initialize(const int max_items) noexcept {
     cub::DeviceScan::ExclusiveSum(nullptr, temp_storage_bytes,
                                   d_in, d_out, _num_items);
     if (temp_storage_bytes)
-        _d_temp_storage.resize(temp_storage_bytes);
+        _d_temp_storage.resize(temp_storage_bytes, cuda_stream_view{});
 }
 
 //------------------------------------------------------------------------------
@@ -463,7 +463,7 @@ void CubInclusiveMax<T>::initialize(const int max_items) noexcept {
     cub::DeviceScan::InclusiveScan(nullptr, temp_storage_bytes,
                                   d_in, d_out, max_op, _num_items);
     if (temp_storage_bytes)
-        _d_temp_storage.resize(temp_storage_bytes);
+        _d_temp_storage.resize(temp_storage_bytes, cuda_stream_view{});
 }
 
 //------------------------------------------------------------------------------
