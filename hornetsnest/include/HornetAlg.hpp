@@ -47,6 +47,7 @@
 #include "StandardAPI.hpp"
 #include "HostDeviceVar.cuh"
 #include "LoadBalancing/BinarySearch.cuh"
+#include "LoadBalancing/lrb_lb.cuh"
 
 
 //#include <BasicTypes.hpp>
