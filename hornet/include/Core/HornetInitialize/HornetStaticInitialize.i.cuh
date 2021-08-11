@@ -1,6 +1,7 @@
 #include "../SoA/SoAData.cuh"
 
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
+#include <rmm/device_vector.hpp>
 
 using namespace rmm;
 
@@ -119,7 +120,7 @@ HORNETSTATIC::
 max_degree_id() const noexcept {
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
     cudaStream_t stream{nullptr};    
-    auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
+    auto* iter = thrust::max_element(rmm::exec_policy(stream), start_ptr, start_ptr + _nV);
     if (iter == start_ptr + _nV) {
         return static_cast<vid_t>(-1);
     } else {
@@ -134,7 +135,7 @@ max_degree() const noexcept {
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
     cudaStream_t stream{nullptr};
 
-    auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
+    auto* iter = thrust::max_element(rmm::exec_policy(stream), start_ptr, start_ptr + _nV);
     if (iter == start_ptr + _nV) {
         return static_cast<degree_t>(0);
     } else {

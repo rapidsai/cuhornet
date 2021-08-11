@@ -34,7 +34,7 @@
 #include <iostream>
 #include <Device/Util/Timer.cuh>
 
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
 
 using namespace std;
 using namespace rmm;
@@ -94,7 +94,7 @@ void KTruss::createOffSetArray(){
     forAllVertices(hornet, getVertexSizes {tempSize});
 
     cudaStream_t stream{nullptr};
-    thrust::inclusive_scan(rmm::exec_policy(stream)->on(stream), tempSize, tempSize + originalNV, hd_data().offset_array+1);
+    thrust::inclusive_scan(rmm::exec_policy(stream), tempSize, tempSize + originalNV, hd_data().offset_array+1);
 }
 
 void KTruss::copyOffsetArrayHost(const vert_t* host_offset_array) {

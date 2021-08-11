@@ -3,6 +3,7 @@
 
 #include <cub/cub.cuh>
 #include <rmm/device_buffer.hpp>
+#include <rmm/device_vector.hpp>
 
 namespace hornet {
 
@@ -267,7 +268,7 @@ cub_block_segmented_sort(CSoAPtr<EdgeTypes...> &soa, degree_t capacity, degree_t
 
   cudaStream_t stream{nullptr};
   rmm::device_vector<degree_t> index(capacity);
-  thrust::sequence(rmm::exec_policy(stream)->on(stream), index.begin(), index.end());
+  thrust::sequence(rmm::exec_policy(stream), index.begin(), index.end());
   using T0 = typename xlib::SelectType<0, EdgeTypes...>::type;
   T0 * key = temp_soa.template get<0>();
   using T1 = degree_t;
@@ -299,7 +300,7 @@ cub_segmented_sort(CSoAPtr<EdgeTypes...> &soa, degree_t capacity, degree_t segme
 
   degree_t offset_count = capacity/segment_length;
   rmm::device_vector<degree_t> offsets(offset_count + 1);
-  thrust::transform(rmm::exec_policy(stream)->on(stream),
+  thrust::transform(rmm::exec_policy(stream),
       offsets.begin(), offsets.end(),
       thrust::make_constant_iterator(segment_length),
       offsets.begin(),
@@ -333,7 +334,7 @@ cub_segmented_sort(CSoAPtr<EdgeTypes...> &soa, degree_t capacity, degree_t segme
 
   degree_t offset_count = capacity/segment_length;
   rmm::device_vector<degree_t> offsets(offset_count + 1);
-  thrust::transform(rmm::exec_policy(stream)->on(stream),
+  thrust::transform(rmm::exec_policy(stream),
       offsets.begin(), offsets.end(),
       thrust::make_constant_iterator(segment_length),
       offsets.begin(),
@@ -371,7 +372,7 @@ cub_segmented_sort(CSoAPtr<EdgeTypes...> &soa, degree_t capacity, degree_t segme
 
   degree_t offset_count = capacity/segment_length;
   rmm::device_vector<degree_t> offsets(offset_count + 1);
-  thrust::transform(rmm::exec_policy(stream)->on(stream),
+  thrust::transform(rmm::exec_policy(stream),
       offsets.begin(), offsets.end(),
       thrust::make_constant_iterator(segment_length),
       offsets.begin(),

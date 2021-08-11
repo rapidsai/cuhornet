@@ -1,6 +1,7 @@
 #include "../Conf/EdgeOperations.cuh"
 
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
+#include <rmm/device_vector.hpp>
 
 using namespace rmm;
 
