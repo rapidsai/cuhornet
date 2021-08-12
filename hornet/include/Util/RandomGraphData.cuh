@@ -9,6 +9,8 @@
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/uniform_int_distribution.h>
 
+#include <rmm/device_vector.hpp>
+
 namespace hornet {
 
 template <typename T>

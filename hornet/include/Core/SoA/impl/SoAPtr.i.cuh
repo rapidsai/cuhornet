@@ -34,7 +34,8 @@
  * </blockquote>}
  */
 
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
+#include <rmm/device_vector.hpp>
 #include <thrust/host_vector.h>
 
 using namespace rmm;
@@ -277,7 +278,7 @@ struct RecursiveGather {
         if (N >= SIZE) { return; }
         cudaStream_t stream{nullptr};
         thrust::gather(
-                rmm::exec_policy(stream)->on(stream),
+                rmm::exec_policy(stream),
                 map.begin(), map.begin() + nE,
                 src.template get<N>(),
                 dst.template get<N>());
@@ -595,11 +596,11 @@ sort_edges(Ptr<EdgeTypes...> ptr, const degree_t nE) {
     cudaStream_t stream{nullptr};
     
     thrust::sort_by_key(
-            rmm::exec_policy(stream)->on(stream),
+            rmm::exec_policy(stream),
             ptr.template get<1>(), ptr.template get<1>() + nE,
             ptr.template get<0>());
     thrust::sort_by_key(
-            rmm::exec_policy(stream)->on(stream),
+            rmm::exec_policy(stream),
             ptr.template get<0>(), ptr.template get<0>() + nE,
             ptr.template get<1>());
 }
@@ -619,11 +620,11 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degre
     cudaStream_t stream{nullptr};
 
     thrust::sort_by_key(
-            rmm::exec_policy(stream)->on(stream),
+            rmm::exec_policy(stream),
             in_ptr.template get<1>(), in_ptr.template get<1>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<0>(), in_ptr.template get<2>())) );
     thrust::sort_by_key(
-            rmm::exec_policy(stream)->on(stream),
+            rmm::exec_policy(stream),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), in_ptr.template get<2>())) );
     return false;
@@ -638,11 +639,11 @@ sort_batch(Ptr<EdgeTypes...> in_ptr, const degree_t nE, rmm::device_vector<degre
     cudaStream_t stream{nullptr};
 
     thrust::sort_by_key(
-            rmm::exec_policy(stream)->on(stream),
+            rmm::exec_policy(stream),
             in_ptr.template get<1>(), in_ptr.template get<1>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<0>(), range.begin())) );
     thrust::sort_by_key(
-            rmm::exec_policy(stream)->on(stream),
+            rmm::exec_policy(stream),
             in_ptr.template get<0>(), in_ptr.template get<0>() + nE,
             thrust::make_zip_iterator(thrust::make_tuple(in_ptr.template get<1>(), range.begin())) );
     //FIXME : Check correctness of RecursiveCopy and RecursiveGather template parameters

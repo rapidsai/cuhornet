@@ -5,7 +5,8 @@
 #include <thrust/execution_policy.h>
 #include "../SoA/SoAData.cuh"
 
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
+#include <rmm/device_vector.hpp>
 
 using namespace rmm;
 
@@ -18,7 +19,7 @@ namespace gpu {
   max_degree_id() const noexcept {
       auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
       cudaStream_t stream{nullptr};
-      auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
+      auto* iter = thrust::max_element(rmm::exec_policy(stream), start_ptr, start_ptr + _nV);
       if (iter == start_ptr + _nV) {
           return static_cast<vid_t>(-1);
       } else {
@@ -32,7 +33,7 @@ namespace gpu {
   max_degree() const noexcept {
       auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
       cudaStream_t stream{nullptr};
-      auto* iter = thrust::max_element(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV);
+      auto* iter = thrust::max_element(rmm::exec_policy(stream), start_ptr, start_ptr + _nV);
       if (iter == start_ptr + _nV) {
           return static_cast<degree_t>(0);
       } else {
@@ -88,8 +89,8 @@ namespace gpu {
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
 
     cudaStream_t stream{nullptr};
-    thrust::copy(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV, offset.begin());
-    thrust::exclusive_scan(rmm::exec_policy(stream)->on(stream), offset.begin(), offset.end(), offset.begin());
+    thrust::copy(rmm::exec_policy(stream), start_ptr, start_ptr + _nV, offset.begin());
+    thrust::exclusive_scan(rmm::exec_policy(stream), offset.begin(), offset.end(), offset.begin());
 
     HornetDeviceT hornet_device = device();
     const int BLOCK_SIZE = 256;
@@ -136,8 +137,8 @@ namespace gpu {
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
     cudaStream_t stream{nullptr};
 
-    thrust::copy(rmm::exec_policy(stream)->on(stream), start_ptr, start_ptr + _nV, degree.begin());
-    thrust::exclusive_scan(rmm::exec_policy(stream)->on(stream), degree.begin(), degree.end(), degree.begin());
+    thrust::copy(rmm::exec_policy(stream), start_ptr, start_ptr + _nV, degree.begin());
+    thrust::exclusive_scan(rmm::exec_policy(stream), degree.begin(), degree.end(), degree.begin());
 
     HornetDeviceT hornet_device = device();
     const int BLOCK_SIZE = 256;

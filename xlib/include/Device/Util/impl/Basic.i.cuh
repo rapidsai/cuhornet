@@ -204,7 +204,7 @@ unsigned discontinuity_mask(const T& value1, const T& value2, bool& lane_bit,
 template<unsigned WARP_SZ>
 constexpr unsigned warp_segmask() {
     unsigned value = 0;
-    for (int i = 0; i < xlib::WARP_SIZE; i += WARP_SZ) {
+    for (size_t i = 0; i < xlib::WARP_SIZE; i += WARP_SZ) {
         value <<= WARP_SZ;
         value |= 1;
     }

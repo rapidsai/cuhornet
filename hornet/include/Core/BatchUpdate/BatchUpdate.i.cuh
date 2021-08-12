@@ -35,7 +35,9 @@
  */
 #include "Host/Metaprogramming.hpp"
 
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
+#include <rmm/device_vector.hpp>
+
 using namespace rmm;
 
 template <typename T>
@@ -267,7 +269,7 @@ remove_duplicates_edges_only(
     cudaStream_t stream{nullptr};
     auto end_ptr =
         thrust::unique_copy(
-                rmm::exec_policy(stream)->on(stream),
+                rmm::exec_policy(stream),
                 begin_in_tuple, begin_in_tuple + nE,
                 begin_out_tuple,
                 IsSrcDstEqual());
@@ -304,7 +306,7 @@ remove_duplicates(
     cudaStream_t stream{nullptr};
     auto end_ptr =
         thrust::unique_copy(
-                rmm::exec_policy(stream)->on(stream),
+                rmm::exec_policy(stream),
                 begin_in_tuple, begin_in_tuple + nE,
                 begin_out_tuple,
                 IsSrcDstEqual());
@@ -332,7 +334,7 @@ remove_duplicates(
     cudaStream_t stream{nullptr};
     auto end_ptr =
         thrust::unique_copy(
-                rmm::exec_policy(stream)->on(stream),
+                rmm::exec_policy(stream),
                 begin_in_tuple, begin_in_tuple + nE,
                 begin_out_tuple,
                 IsSrcDstEqual());
@@ -694,7 +696,7 @@ locateEdgesToBeErased(
                 batch_src_out, destination_edges.begin()));
                 //realloc_sources.begin(), destination_edges.begin()));
     cudaStream_t stream{nullptr};
-    _nE = thrust::copy_if(rmm::exec_policy(stream)->on(stream),
+    _nE = thrust::copy_if(rmm::exec_policy(stream),
             ptr_tuple, ptr_tuple + _nE,
             batch_erase_flag.begin(),
             out_ptr_tuple,

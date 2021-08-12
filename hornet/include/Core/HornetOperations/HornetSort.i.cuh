@@ -15,6 +15,8 @@
  */
 #include <limits>
 
+#include <rmm/device_vector.hpp>
+
 namespace hornet {
 
 namespace gpu {
@@ -60,13 +62,13 @@ sort(void) {
 
   rmm::device_vector<degree_t> offsets(_nV + 1);
   degree_t * vertex_degrees = _vertex_data.get_soa_ptr().template get<0>();
-  thrust::transform(rmm::exec_policy(stream)->on(stream),
+  thrust::transform(rmm::exec_policy(stream),
       vertex_degrees, vertex_degrees + _nV,
       offsets.begin(),
       InvalidEdgeCount<degree_t>());
     CHECK_CUDA_ERROR
 
-  thrust::exclusive_scan(rmm::exec_policy(stream)->on(stream),
+  thrust::exclusive_scan(rmm::exec_policy(stream),
       offsets.begin(), offsets.end(), offsets.begin());
     CHECK_CUDA_ERROR
 

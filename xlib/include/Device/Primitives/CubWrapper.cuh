@@ -50,8 +50,9 @@
 #include "Host/Numeric.hpp"
 
 #include <cub/cub.cuh>
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
 #include <rmm/device_buffer.hpp>
+#include <rmm/device_vector.hpp>
 
 namespace xlib {
 
