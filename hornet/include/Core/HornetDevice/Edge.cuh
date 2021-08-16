@@ -71,7 +71,6 @@ class Edge<
 
     private:
 
-    HornetDeviceT&      _hornet;
     vid_t               _src_id;
     degree_t             _index;
     mutable EdgeContainerT _ptr;
@@ -85,6 +84,7 @@ class Edge<
         const degree_t edges_per_block);
 
     public:
+    HornetDeviceT&      _hornet;
 
     HOST_DEVICE
     vid_t
