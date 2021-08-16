@@ -1,0 +1,32 @@
+## Common
+__pycache__
+*.pyc
+*.a
+*.o
+*.so
+*.dylib
+.cache
+.coverage
+.vscode
+*.swp
+*.pytest_cache
+.DS_Store
+
+## C++ build directories & artifacts
+CMakeFiles/
+Debug
+build/
+hornet/build/
+hornetsnest/build
+	
+## Eclipse IDE
+.project
+.cproject
+.settings
+
+## IntelliJ IDE
+.idea/
+.idea_modules/
+*.iml
+*.ipr
+*.iws

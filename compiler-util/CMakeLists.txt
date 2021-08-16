@@ -55,10 +55,14 @@ else()
     set(GPU_ARCHS "${GPU_ARCHS};75")
   endif()
   if(CUDA_VERSION_MAJOR GREATER_EQUAL 11)
-    set(GPU_ARCHS "${GPU_ARCHS};80")
+    set(GPU_ARCHS "${GPU_ARCHS};80;86")
   endif()
 
 endif()
+
+set (CMAKE_CUDA_ARCHITECTURES "${GPU_ARCHS}")
+set (CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}")
+
 
 message("-- Building for GPU_ARCHS = ${GPU_ARCHS}")
 foreach(arch ${GPU_ARCHS})
