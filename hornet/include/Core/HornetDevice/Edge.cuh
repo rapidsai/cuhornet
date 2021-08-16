@@ -84,6 +84,8 @@ class Edge<
         const degree_t edges_per_block);
 
     public:
+    //FIXME : Temporary fix for CUDA 11.4
+    //Move to private after resolution
     HornetDeviceT&      _hornet;
 
     HOST_DEVICE
