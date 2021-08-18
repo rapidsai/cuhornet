@@ -71,6 +71,7 @@ class Vertex<
         vid_t, degree_t>;
 
     private:
+    HornetDeviceT&  _hornet;
     vid_t           _id;
 
     HOST_DEVICE
@@ -79,7 +80,6 @@ class Vertex<
     public:
     //FIXME : Temporary fix for CUDA 11.4
     //Move to private after resolution
-    HornetDeviceT&  _hornet;
 
     HOST_DEVICE
     vid_t id(void) const;
