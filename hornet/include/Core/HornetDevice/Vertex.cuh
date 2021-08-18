@@ -78,8 +78,6 @@ class Vertex<
     Vertex(HornetDeviceT& hornet, const vid_t id);
 
     public:
-    //FIXME : Temporary fix for CUDA 11.4
-    //Move to private after resolution
 
     HOST_DEVICE
     vid_t id(void) const;
