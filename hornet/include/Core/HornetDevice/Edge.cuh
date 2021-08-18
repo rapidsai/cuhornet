@@ -71,9 +71,10 @@ class Edge<
 
     private:
 
+    mutable EdgeContainerT _ptr;
+    HornetDeviceT&      _hornet;
     vid_t               _src_id;
     degree_t             _index;
-    mutable EdgeContainerT _ptr;
 
     HOST_DEVICE
     Edge(HornetDeviceT& hornet,
@@ -84,9 +85,6 @@ class Edge<
         const degree_t edges_per_block);
 
     public:
-    //FIXME : Temporary fix for CUDA 11.4
-    //Move to private after resolution
-    HornetDeviceT&      _hornet;
 
     HOST_DEVICE
     vid_t

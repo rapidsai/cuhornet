@@ -48,10 +48,10 @@ EDGE::Edge(
         xlib::byte_t* const edge_block_ptr,
         const degree_t vertex_offset,
         const degree_t edges_per_block) :
+    _ptr(edge_block_ptr, edges_per_block),
     _hornet(hornet),
     _src_id(src_id),
-    _index(index + vertex_offset),
-    _ptr(edge_block_ptr, edges_per_block) {}
+    _index(index + vertex_offset) {}
 
 template <typename... VertexMetaTypes, typename... EdgeMetaTypes,
     typename vid_t, typename degree_t>
