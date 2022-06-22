@@ -36,6 +36,8 @@
 
 #include <rmm/exec_policy.hpp>
 
+#include <thrust/scan.h>
+
 using namespace std;
 using namespace rmm;
 
@@ -205,7 +207,7 @@ void KTrussWeighted<T>::findTrussOfK() {
     forAllVertices(hnt, Init { hd_data });
     resetEdgeArray();
     resetVertexArray();
- 
+
     cudaMemset(hd_data().counter,0, sizeof(int));
 
     int h_active_vertices = originalNV;

@@ -17,6 +17,9 @@
 
 #include <rmm/device_vector.hpp>
 
+#include <thrust/scan.h>
+#include <thrust/transform.h>
+
 namespace hornet {
 
 namespace gpu {

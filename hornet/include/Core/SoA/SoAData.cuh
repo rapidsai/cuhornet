@@ -42,6 +42,7 @@
 #include <Device/Util/SafeCudaAPISync.cuh>
 #include <thrust/device_vector.h>
 #include <thrust/gather.h>
+#include <thrust/host_vector.h>
 #include <vector>
 
 #include <rmm/exec_policy.hpp>

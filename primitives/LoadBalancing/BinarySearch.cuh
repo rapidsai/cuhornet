@@ -37,9 +37,11 @@
  * @file
  */
 #pragma once
- 
+
 #include "BasicTypes.hpp"
 #include "Queue/TwoLevelQueue.cuh"
+
+#include <thrust/device_vector.h>
 
 namespace hornets_nest {
 /**

@@ -36,7 +36,16 @@
 
 #include <rmm/exec_policy.hpp>
 #include <rmm/device_vector.hpp>
+
+#include <thrust/device_ptr.h>
+#include <thrust/execution_policy.h>
+#include <thrust/fill.h>
+#include <thrust/gather.h>
 #include <thrust/host_vector.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/sequence.h>
+#include <thrust/sort.h>
+#include <thrust/tuple.h>
 
 using namespace rmm;
 
@@ -594,7 +603,7 @@ template <template <typename...> typename Ptr, typename degree_t, typename... Ed
 void
 sort_edges(Ptr<EdgeTypes...> ptr, const degree_t nE) {
     cudaStream_t stream{nullptr};
-    
+
     thrust::sort_by_key(
             rmm::exec_policy(stream),
             ptr.template get<1>(), ptr.template get<1>() + nE,

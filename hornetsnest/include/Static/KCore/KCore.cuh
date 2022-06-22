@@ -5,7 +5,13 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include <thrust/copy.h>
+#include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
 #include <thrust/functional.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/sort.h>
+#include <thrust/tuple.h>
 #include <BufferPool.cuh>
 
 
@@ -104,7 +110,7 @@ void print_ptr(vert_t* src, int count, bool sort = false) {
 }
 
 template <typename HornetGraph>
-KCORE::KCore(HornetGraph &hornet) : 
+KCORE::KCore(HornetGraph &hornet) :
                         StaticAlgorithm<HornetGraph>(hornet),
                         vqueue(hornet),
                         peel_vqueue(hornet),
@@ -160,7 +166,7 @@ struct PeelVertices {
     uint32_t peel;
     TwoLevelQueue<vert_t> peel_queue;
     TwoLevelQueue<vert_t> iter_queue;
-    
+
     //mark vertices with degrees less than peel
     OPERATOR(Vertex &v) {
         vert_t id = v.id();
@@ -176,7 +182,7 @@ struct RemovePres {
     vert_t *vertex_pres;
     uint32_t * core_number;
     uint32_t peel;
-    
+
     OPERATOR(Vertex &v) {
         vert_t id = v.id();
         if (vertex_pres[id] == 2) {
@@ -200,7 +206,7 @@ struct DecrementDegree {
 struct ExtractSubgraph {
     HostDeviceVar<KCoreData> hd;
     vert_t *vertex_pres;
-    
+
     OPERATOR(Vertex &v, Edge &e) {
         vert_t src = v.id();
         vert_t dst = e.dst_id();
@@ -261,7 +267,7 @@ void oper_bidirect_batch(HornetGraph &hornet, vert_t *src, vert_t *dst, int size
   hornet.erase(batch_update);
 }
 
-void kcores_new(HornetGraph &hornet, 
+void kcores_new(HornetGraph &hornet,
             uint32_t *core_number,
             TwoLevelQueue<vert_t> &peel_queue,
             TwoLevelQueue<vert_t> &active_queue,
@@ -276,7 +282,7 @@ void kcores_new(HornetGraph &hornet,
     uint32_t peel = 0;
 
     while (n_active > 0) {
-      forAllVertices(hornet, active_queue, 
+      forAllVertices(hornet, active_queue,
           PeelVertices { vertex_pres, deg, peel, peel_queue, iter_queue} );
         iter_queue.swap();
 
@@ -297,13 +303,13 @@ void kcores_new(HornetGraph &hornet,
 template <typename HornetGraph>
 void KCORE::run() {
     HornetGraph& hornet = StaticAlgorithm<HornetGraph>::hornet;
-    kcores_new(hornet, core_number.data().get(), peel_vqueue, active_queue, iter_queue, 
+    kcores_new(hornet, core_number.data().get(), peel_vqueue, active_queue, iter_queue,
                load_balancing, vertex_deg, vertex_pres);
     thrust::copy(core_number.begin(), core_number.end(), std::ostream_iterator<uint32_t>(std::cout, "\n"));
 }
 
-void kcores_new(HornetGraph &hornet, 
-            HostDeviceVar<KCoreData>& hd, 
+void kcores_new(HornetGraph &hornet,
+            HostDeviceVar<KCoreData>& hd,
             TwoLevelQueue<vert_t> &peel_queue,
             TwoLevelQueue<vert_t> &active_queue,
             TwoLevelQueue<vert_t> &iter_queue,
@@ -319,7 +325,7 @@ void kcores_new(HornetGraph &hornet,
     uint32_t peel = 0;
 
     while (n_active > 0) {
-      forAllVertices(hornet, active_queue, 
+      forAllVertices(hornet, active_queue,
           PeelVertices { vertex_pres, deg, peel, peel_queue, iter_queue} );
         iter_queue.swap();
 
@@ -337,9 +343,9 @@ void kcores_new(HornetGraph &hornet,
 
     }
 
-    gpu::memsetZero(hd().counter);  // reset counter. 
+    gpu::memsetZero(hd().counter);  // reset counter.
     peel_queue.swap();
-    forAllEdges(hornet, peel_queue, 
+    forAllEdges(hornet, peel_queue,
                     ExtractSubgraph { hd, vertex_pres }, load_balancing);
 
     *max_peel = peel;
@@ -356,7 +362,7 @@ void json_dump(vert_t *src, vert_t *dst, uint32_t *peel, uint32_t peel_edges, bo
     }
     std::ofstream output_file;
     output_file.open("edge_core_number.txt");
-    
+
     output_file << "{\n";
     for (uint32_t i = 0; i < peel_edges; i++) {
         output_file << "\"" << src[i] << "," << dst[i] << "\": " << peel[i];
@@ -386,7 +392,7 @@ void json_dump(vert_t *src, vert_t *dst, uint32_t *peel, uint32_t peel_edges, bo
 //    auto pres = vertex_pres;
 //    auto deg = vertex_deg;
 //    auto color = vertex_color;
-//    
+//
 //    forAllnumV(hornet, [=] __device__ (int i){ pres[i] = 0; } );
 //    forAllnumV(hornet, [=] __device__ (int i){ deg[i] = 0; } );
 //    forAllnumV(hornet, [=] __device__ (int i){ color[i] = 0; } );
@@ -394,15 +400,15 @@ void json_dump(vert_t *src, vert_t *dst, uint32_t *peel, uint32_t peel_edges, bo
 //    //Timer<DEVICE> TM;
 //    //TM.start();
 //
-//    /* Begin degree 1 vertex preprocessing optimization */ 
+//    /* Begin degree 1 vertex preprocessing optimization */
 //
 //    // Find vertices of degree 1.
 //    forAllVertices(hornet, GetDegOne { vqueue, vertex_color });
 //    vqueue.swap();
 //
 //    // Find the edges incident to these vertices.
-//    gpu::memsetZero(hd_data().counter);  // reset counter. 
-//    forAllEdges(hornet, vqueue, 
+//    gpu::memsetZero(hd_data().counter);  // reset counter.
+//    forAllEdges(hornet, vqueue,
 //                    DegOneEdges { hd_data, vertex_color }, load_balancing);
 //
 //    // Mark edges with peel 1.
@@ -413,9 +419,9 @@ void json_dump(vert_t *src, vert_t *dst, uint32_t *peel, uint32_t peel_edges, bo
 //        peel[i] = 1;
 //    }
 //
-//    cudaMemcpy(src, hd_data().src, peel_one_count * sizeof(vert_t), 
+//    cudaMemcpy(src, hd_data().src, peel_one_count * sizeof(vert_t),
 //                    cudaMemcpyDeviceToHost);
-//    cudaMemcpy(dst, hd_data().dst, peel_one_count * sizeof(vert_t), 
+//    cudaMemcpy(dst, hd_data().dst, peel_one_count * sizeof(vert_t),
 //                    cudaMemcpyDeviceToHost);
 //
 //    peel_edges = (uint32_t)peel_one_count;
@@ -428,15 +434,15 @@ void json_dump(vert_t *src, vert_t *dst, uint32_t *peel, uint32_t peel_edges, bo
 //        uint32_t max_peel = 0;
 //        int batch_size = 0;
 //
-//        kcores_new(hornet, hd_data, peel_vqueue, active_queue, iter_queue, 
+//        kcores_new(hornet, hd_data, peel_vqueue, active_queue, iter_queue,
 //                   load_balancing, vertex_deg, vertex_pres, &max_peel, &batch_size);
 //        std::cout << "max_peel: " << max_peel << "\n";
 //
 //        if (batch_size > 0) {
-//            cudaMemcpy(src + peel_edges, hd_data().src, 
+//            cudaMemcpy(src + peel_edges, hd_data().src,
 //                       batch_size * sizeof(vert_t), cudaMemcpyDeviceToHost);
 //
-//            cudaMemcpy(dst + peel_edges, hd_data().dst, 
+//            cudaMemcpy(dst + peel_edges, hd_data().dst,
 //                       batch_size * sizeof(vert_t), cudaMemcpyDeviceToHost);
 //
 //            #pragma omp parallel for

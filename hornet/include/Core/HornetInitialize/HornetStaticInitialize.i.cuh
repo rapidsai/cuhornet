@@ -3,6 +3,13 @@
 #include <rmm/exec_policy.hpp>
 #include <rmm/device_vector.hpp>
 
+#include <thrust/copy.h>
+#include <thrust/device_ptr.h>
+#include <thrust/extrema.h>
+#include <thrust/fill.h>
+#include <thrust/functional.h>
+#include <thrust/transform.h>
+
 using namespace rmm;
 
 namespace hornet {
@@ -119,7 +126,7 @@ vid_t
 HORNETSTATIC::
 max_degree_id() const noexcept {
     auto start_ptr = _vertex_data.get_soa_ptr().template get<0>();
-    cudaStream_t stream{nullptr};    
+    cudaStream_t stream{nullptr};
     auto* iter = thrust::max_element(rmm::exec_policy(stream), start_ptr, start_ptr + _nV);
     if (iter == start_ptr + _nV) {
         return static_cast<vid_t>(-1);
