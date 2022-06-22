@@ -6,8 +6,16 @@
 #include "../Core/Static/Static.cuh"
 #include <random>                       //std::mt19937_64
 #include <utility>                       //std::mt19937_64
+
+#include <thrust/device_ptr.h>
+#include <thrust/host_vector.h>
+#include <thrust/iterator/counting_iterator.h>
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/uniform_int_distribution.h>
+#include <thrust/random/uniform_real_distribution.h>
+#include <thrust/sequence.h>
+#include <thrust/sort.h>
+#include <thrust/transform.h>
 
 #include <rmm/device_vector.hpp>
 

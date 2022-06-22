@@ -38,6 +38,16 @@
 #include <rmm/exec_policy.hpp>
 #include <rmm/device_vector.hpp>
 
+#include <thrust/copy.h>
+#include <thrust/device_ptr.h>
+#include <thrust/fill.h>
+#include <thrust/functional.h>
+#include <thrust/host_vector.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/sequence.h>
+#include <thrust/tuple.h>
+#include <thrust/unique.h>
+
 using namespace rmm;
 
 template <typename T>
@@ -265,7 +275,7 @@ remove_duplicates_edges_only(
                 in_ptr.template get<0>(), in_ptr.template get<1>()));
     auto begin_out_tuple = thrust::make_zip_iterator(thrust::make_tuple(
                 out_ptr.template get<0>(), out_ptr.template get<1>()));
-    
+
     cudaStream_t stream{nullptr};
     auto end_ptr =
         thrust::unique_copy(

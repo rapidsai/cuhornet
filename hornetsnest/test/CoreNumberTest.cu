@@ -8,6 +8,8 @@
 #include <Device/Util/Timer.cuh>
 #include <Graph/GraphStd.hpp>
 
+#include <thrust/device_vector.h>
+
 using namespace timer;
 using namespace hornets_nest;
 

@@ -42,12 +42,14 @@
 #include <BufferPool.cuh>
 
 #include <cmath>
-#include <thrust/functional.h>
-#include <thrust/transform_reduce.h>
+
+#include <thrust/device_ptr.h>
 #include <thrust/device_vector.h>
-#include <thrust/transform.h>
-#include <thrust/inner_product.h>
 #include <thrust/execution_policy.h>
+#include <thrust/functional.h>
+#include <thrust/inner_product.h>
+#include <thrust/transform.h>
+#include <thrust/transform_reduce.h>
 
 
 namespace hornets_nest {

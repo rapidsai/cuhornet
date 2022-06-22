@@ -5,6 +5,11 @@
 #include <rmm/device_buffer.hpp>
 #include <rmm/device_vector.hpp>
 
+#include <thrust/functional.h>
+#include <thrust/iterator/constant_iterator.h>
+#include <thrust/sequence.h>
+#include <thrust/transform.h>
+
 namespace hornet {
 
 namespace detail {
