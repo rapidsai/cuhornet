@@ -160,6 +160,20 @@ template <> struct DeviceProp<860> {
   static const unsigned THREADS_PER_SM = 2048;
 };
 
+template <> struct DeviceProp<890> {
+  static const unsigned SMEM_PER_SM = 65536;
+  static const unsigned RBLOCKS_PER_SM = 32;
+  static const unsigned arch = 890;
+  static const unsigned THREADS_PER_SM = 2048;
+};
+
+template <> struct DeviceProp<900> {
+  static const unsigned SMEM_PER_SM = 65536;
+  static const unsigned RBLOCKS_PER_SM = 32;
+  static const unsigned arch = 900;
+  static const unsigned THREADS_PER_SM = 2048;
+};
+
 //==============================================================================
 
 template <unsigned BLOCK_SIZE>
