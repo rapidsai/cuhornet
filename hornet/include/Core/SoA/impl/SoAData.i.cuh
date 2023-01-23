@@ -41,8 +41,6 @@
 #include <thrust/device_ptr.h>
 #include <thrust/host_vector.h>
 
-using namespace rmm;
-
 namespace hornet {
 
 //==============================================================================

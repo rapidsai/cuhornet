@@ -41,7 +41,9 @@
 #if defined(NVTX)
     #include <nvToolsExt.h>     //nvtxRangePushEx
 #endif
+
 #include <iomanip>              //std::setw
+#include <string>
 
 namespace xlib {
 

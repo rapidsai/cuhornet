@@ -53,9 +53,6 @@
 #include <rmm/exec_policy.hpp>
 #include <rmm/device_vector.hpp>
 
-using namespace rmm;
-
-
 #define CUDA_TRY_CALL( call ) 									                            \
 {                                                                     \
     cudaError_t cudaStatus = call;                                    \

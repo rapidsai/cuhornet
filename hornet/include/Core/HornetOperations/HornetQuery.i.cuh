@@ -8,9 +8,6 @@
 #include <rmm/exec_policy.hpp>
 #include <rmm/device_vector.hpp>
 
-using namespace rmm;
-
-
 namespace hornet {
 namespace gpu {
   template <typename... VertexMetaTypes, typename... EdgeMetaTypes, typename vid_t, typename degree_t>

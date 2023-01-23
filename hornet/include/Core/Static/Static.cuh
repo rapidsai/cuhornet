@@ -15,8 +15,6 @@
 
 #include <thrust/host_vector.h>
 
-using namespace rmm;
-
 namespace hornet {
 
 template <DeviceType = DeviceType::DEVICE, typename = VID_T, typename = EMPTY, typename = DEGREE_T> class COO;

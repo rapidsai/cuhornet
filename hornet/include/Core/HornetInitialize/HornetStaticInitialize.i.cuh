@@ -10,8 +10,6 @@
 #include <thrust/functional.h>
 #include <thrust/transform.h>
 
-using namespace rmm;
-
 namespace hornet {
 namespace gpu {
 
