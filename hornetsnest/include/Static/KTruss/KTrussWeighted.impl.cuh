@@ -38,9 +38,6 @@
 
 #include <thrust/scan.h>
 
-using namespace std;
-using namespace rmm;
-
 namespace hornets_nest {
 
 template <typename HornetGraphType>

@@ -40,6 +40,7 @@
 
 #include <array>    //std::array
 #include <limits>   //std::numeric_limits
+#include <string>   //std::string
 
 namespace xlib {
 

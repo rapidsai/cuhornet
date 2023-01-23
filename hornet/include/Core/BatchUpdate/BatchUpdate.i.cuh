@@ -48,8 +48,6 @@
 #include <thrust/tuple.h>
 #include <thrust/unique.h>
 
-using namespace rmm;
-
 template <typename T>
 void print_vec(rmm::device_vector<T>& vec) {
         thrust::copy(vec.begin(), vec.end(), std::ostream_iterator<T>(std::cout, " "));

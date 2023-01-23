@@ -47,9 +47,6 @@
 #include <thrust/sort.h>
 #include <thrust/tuple.h>
 
-using namespace rmm;
-
-
 namespace hornet {
 
 //==============================================================================

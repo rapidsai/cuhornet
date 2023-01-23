@@ -7,9 +7,6 @@
 #include <thrust/device_ptr.h>
 #include <thrust/fill.h>
 
-using namespace rmm;
-
-
 template <typename HornetDeviceT, typename vid_t, typename degree_t>
 __global__
 void get_vertex_degrees_kernel(

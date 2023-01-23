@@ -40,8 +40,6 @@
 
 #include <thrust/copy.h>
 
-using namespace rmm;
-
 namespace hornet {
 namespace gpu {
 
