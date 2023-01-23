@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 #pragma once
-#include <vector>
+
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
+
+#include <vector>
 
 class BufferPool {
   std::vector<rmm::device_buffer> _data;
@@ -29,6 +32,6 @@ class BufferPool {
 template <typename P>
 void
 BufferPool::allocate(P** ptr, size_t num_items) {
-  _data.emplace_back(num_items*sizeof(P), cuda_stream_view{});
+  _data.emplace_back(num_items*sizeof(P), rmm::cuda_stream_view{});
   *ptr = static_cast<P*>(_data.back().data());
 }
