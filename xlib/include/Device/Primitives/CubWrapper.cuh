@@ -50,9 +50,11 @@
 #include "Host/Numeric.hpp"
 
 #include <cub/cub.cuh>
-#include <rmm/exec_policy.hpp>
+
+#include <rmm/cuda_stream_view.hpp>
 #include <rmm/device_buffer.hpp>
 #include <rmm/device_vector.hpp>
+#include <rmm/exec_policy.hpp>
 
 
 namespace xlib {
