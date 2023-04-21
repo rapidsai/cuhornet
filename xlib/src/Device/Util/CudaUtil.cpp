@@ -39,7 +39,7 @@
 #include "Host/PrintExt.hpp"            //Color
 #include <cuda_runtime_api.h>           //cudaDeviceGetAttribute
 #if defined(NVTX)
-    #include <nvToolsExt.h>     //nvtxRangePushEx
+    #include <nvtx3/nvToolsExt.h>     //nvtxRangePushEx
 #endif
 
 #include <iomanip>              //std::setw
