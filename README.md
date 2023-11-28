@@ -1,5 +1,11 @@
 # Hornet #
 
+NOTE: The cuhornet repository is a copy of https://github.com/hornet-gt/hornet that is being maintained by the RAPIDS
+cugraph team while we use it in our library.  We currently only use headers to provide the ktruss implementation.
+
+This library does not currently build.  Since we only use headers, we are not maintaining the build processes for
+this library.  We expect to drop support for this entirely in early 2024.
+
 This repository provides the Hornet data structure and algorithms on sparse graphs and matrices.
 
 ## Getting Started ##
